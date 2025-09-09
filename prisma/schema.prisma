@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource primary {
+  provider = "postgresql"
+  url      = env("PRIMARY_DATABASE_URL")
+}
+
+datasource logs {
+  provider = "postgresql"
+  url      = env("LOGS_DATABASE_URL")
+}
+
+datasource address {
+  provider = "postgresql"
+  url      = env("ADDRESS_DATABASE_URL")
+}
