@@ -1,0 +1,78 @@
+// This is your Prisma schema file for FleetStack_logs (Logs Database)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/logs"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("LOGS_DATABASE_URL")
+}
+
+// Logs Database Models (Application Logs, Audit Trails, System Logs)
+
+model ApplicationLog {
+  id        String   @id @default(cuid())
+  level     LogLevel
+  message   String
+  context   String?
+  metadata  Json?
+  userId    String?
+  timestamp DateTime @default(now())
+  source    String   @default("application")
+
+  @@map("application_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  userId     String?
+  oldValues  Json?
+  newValues  Json?
+  metadata   Json?
+  timestamp  DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  @@map("audit_logs")
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  level     LogLevel
+  service   String
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+  hostname  String?
+
+  @@map("system_logs")
+}
+
+model ErrorLog {
+  id         String   @id @default(cuid())
+  message    String
+  stack      String?
+  context    String?
+  userId     String?
+  requestId  String?
+  metadata   Json?
+  timestamp  DateTime @default(now())
+  isResolved Boolean  @default(false)
+
+  @@map("error_logs")
+}
+
+// Enums
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+}

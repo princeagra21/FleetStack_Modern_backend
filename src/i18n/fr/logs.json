@@ -1,0 +1,60 @@
+{
+  "service": {
+    "starting": "Le service {{serviceName}} démarre...",
+    "started": "Le service {{serviceName}} a démarré avec succès",
+    "stopping": "Le service {{serviceName}} s'arrête...",
+    "stopped": "Le service {{serviceName}} s'est arrêté",
+    "restarting": "Le service {{serviceName}} redémarre...",
+    "error": "Le service {{serviceName}} a rencontré une erreur : {{error}}",
+    "warning": "Avertissement du service {{serviceName}} : {{message}}",
+    "info": "Information du service {{serviceName}} : {{message}}"
+  },
+  "database": {
+    "connecting": "Connexion à la base de données...",
+    "connected": "Connexion réussie à la base de données",
+    "disconnected": "Déconnecté de la base de données",
+    "connection_error": "Erreur de connexion à la base de données : {{error}}",
+    "query_executed": "Requête de base de données exécutée : {{query}}",
+    "query_failed": "Échec de la requête de base de données : {{error}}",
+    "migration_started": "Migration de base de données démarrée",
+    "migration_completed": "Migration de base de données terminée",
+    "migration_failed": "Échec de la migration de base de données : {{error}}"
+  },
+  "cache": {
+    "connecting": "Connexion au serveur de cache...",
+    "connected": "Connexion réussie au serveur de cache",
+    "disconnected": "Déconnecté du serveur de cache",
+    "connection_error": "Erreur de connexion au cache : {{error}}",
+    "operation_success": "Opération de cache {{operation}} réussie pour la clé : {{key}}",
+    "operation_failed": "Échec de l'opération de cache {{operation}} pour la clé : {{key}} - {{error}}",
+    "cache_hit": "Succès du cache pour la clé : {{key}}",
+    "cache_miss": "Échec du cache pour la clé : {{key}}"
+  },
+  "auth": {
+    "login_attempt": "Tentative de connexion pour l'utilisateur : {{username}}",
+    "login_success": "L'utilisateur {{username}} s'est connecté avec succès",
+    "login_failed": "Échec de la connexion pour l'utilisateur : {{username}} - {{reason}}",
+    "logout": "L'utilisateur {{username}} s'est déconnecté",
+    "token_generated": "Token JWT généré pour l'utilisateur : {{username}}",
+    "token_expired": "Token JWT expiré pour l'utilisateur : {{username}}",
+    "invalid_token": "Token JWT invalide reçu",
+    "permission_denied": "Permission refusée pour l'utilisateur {{username}} sur la ressource {{resource}}"
+  },
+  "api": {
+    "request_received": "{{method}} {{url}} - Demande reçue de {{ip}}",
+    "request_completed": "{{method}} {{url}} - Terminée en {{duration}}ms avec le statut {{status}}",
+    "request_failed": "{{method}} {{url}} - Échec avec erreur : {{error}}",
+    "rate_limit_exceeded": "Limite de débit dépassée pour l'IP : {{ip}}",
+    "invalid_request": "Demande invalide : {{error}}",
+    "validation_failed": "Échec de la validation de la demande : {{errors}}"
+  },
+  "system": {
+    "startup": "L'application démarre...",
+    "ready": "L'application est prête et écoute sur le port {{port}}",
+    "shutdown": "L'application s'arrête...",
+    "memory_usage": "Utilisation de la mémoire : {{used}}MB / {{total}}MB",
+    "cpu_usage": "Utilisation du CPU : {{percentage}}%",
+    "disk_usage": "Utilisation du disque : {{used}}GB / {{total}}GB ({{percentage}}%)",
+    "health_check": "Vérification de santé {{status}} - {{details}}"
+  }
+}

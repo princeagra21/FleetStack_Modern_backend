@@ -1,0 +1,60 @@
+{
+  "service": {
+    "starting": "El servicio {{serviceName}} está iniciando...",
+    "started": "El servicio {{serviceName}} se inició exitosamente",
+    "stopping": "El servicio {{serviceName}} se está deteniendo...",
+    "stopped": "El servicio {{serviceName}} se detuvo",
+    "restarting": "El servicio {{serviceName}} se está reiniciando...",
+    "error": "El servicio {{serviceName}} encontró un error: {{error}}",
+    "warning": "Advertencia del servicio {{serviceName}}: {{message}}",
+    "info": "Información del servicio {{serviceName}}: {{message}}"
+  },
+  "database": {
+    "connecting": "Conectando a la base de datos...",
+    "connected": "Conectado exitosamente a la base de datos",
+    "disconnected": "Desconectado de la base de datos",
+    "connection_error": "Error de conexión a la base de datos: {{error}}",
+    "query_executed": "Consulta de base de datos ejecutada: {{query}}",
+    "query_failed": "Falló la consulta de base de datos: {{error}}",
+    "migration_started": "Migración de base de datos iniciada",
+    "migration_completed": "Migración de base de datos completada",
+    "migration_failed": "Falló la migración de base de datos: {{error}}"
+  },
+  "cache": {
+    "connecting": "Conectando al servidor de caché...",
+    "connected": "Conectado exitosamente al servidor de caché",
+    "disconnected": "Desconectado del servidor de caché",
+    "connection_error": "Error de conexión al caché: {{error}}",
+    "operation_success": "Operación de caché {{operation}} exitosa para la clave: {{key}}",
+    "operation_failed": "Falló la operación de caché {{operation}} para la clave: {{key}} - {{error}}",
+    "cache_hit": "Acierto de caché para la clave: {{key}}",
+    "cache_miss": "Falla de caché para la clave: {{key}}"
+  },
+  "auth": {
+    "login_attempt": "Intento de inicio de sesión para el usuario: {{username}}",
+    "login_success": "Usuario {{username}} inició sesión exitosamente",
+    "login_failed": "Falló el inicio de sesión para el usuario: {{username}} - {{reason}}",
+    "logout": "Usuario {{username}} cerró sesión",
+    "token_generated": "Token JWT generado para el usuario: {{username}}",
+    "token_expired": "Token JWT expirado para el usuario: {{username}}",
+    "invalid_token": "Token JWT inválido recibido",
+    "permission_denied": "Permiso denegado para el usuario {{username}} en el recurso {{resource}}"
+  },
+  "api": {
+    "request_received": "{{method}} {{url}} - Solicitud recibida de {{ip}}",
+    "request_completed": "{{method}} {{url}} - Completada en {{duration}}ms con estado {{status}}",
+    "request_failed": "{{method}} {{url}} - Falló con error: {{error}}",
+    "rate_limit_exceeded": "Límite de velocidad excedido para IP: {{ip}}",
+    "invalid_request": "Solicitud inválida: {{error}}",
+    "validation_failed": "Falló la validación de la solicitud: {{errors}}"
+  },
+  "system": {
+    "startup": "Aplicación iniciando...",
+    "ready": "Aplicación lista y escuchando en el puerto {{port}}",
+    "shutdown": "Aplicación cerrándose...",
+    "memory_usage": "Uso de memoria: {{used}}MB / {{total}}MB",
+    "cpu_usage": "Uso de CPU: {{percentage}}%",
+    "disk_usage": "Uso de disco: {{used}}GB / {{total}}GB ({{percentage}}%)",
+    "health_check": "Verificación de salud {{status}} - {{details}}"
+  }
+}

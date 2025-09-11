@@ -1,0 +1,72 @@
+{
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "email_format": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "min_length": "Muss mindestens {{min}} Zeichen lang sein",
+    "max_length": "Darf nicht mehr als {{max}} Zeichen lang sein",
+    "numeric": "Muss eine gültige Zahl sein",
+    "integer": "Muss eine ganze Zahl sein",
+    "positive": "Muss eine positive Zahl sein",
+    "between": "Muss zwischen {{min}} und {{max}} liegen",
+    "date_format": "Bitte geben Sie ein gültiges Datum ein",
+    "url_format": "Bitte geben Sie eine gültige URL ein",
+    "phone_format": "Bitte geben Sie eine gültige Telefonnummer ein"
+  },
+  "business_logic": {
+    "title": "Geschäftslogik-Fehler",
+    "user_action_forbidden": "Sie können diese Aktion aufgrund von Geschäftsregeln nicht ausführen",
+    "insufficient_balance": "Unzureichendes Guthaben für diese Transaktion",
+    "operation_not_allowed": "Diese Operation ist im aktuellen Zustand nicht erlaubt",
+    "quota_exceeded": "Sie haben Ihr Quota-Limit überschritten",
+    "resource_locked": "Diese Ressource ist derzeit gesperrt",
+    "duplicate_operation": "Diese Operation wurde bereits durchgeführt"
+  },
+  "resource": {
+    "not_found": "{{resourceType}} mit Kennung '{{identifier}}' wurde nicht gefunden",
+    "already_exists": "{{resourceType}} mit {{field}} '{{value}}' existiert bereits",
+    "access_denied": "Sie haben keine Berechtigung, auf diese {{resourceType}} zuzugreifen",
+    "modification_denied": "Sie haben keine Berechtigung, diese {{resourceType}} zu ändern",
+    "deletion_denied": "Sie haben keine Berechtigung, diese {{resourceType}} zu löschen"
+  },
+  "service": {
+    "unavailable": "{{serviceName}} ist derzeit nicht verfügbar: {{reason}}",
+    "timeout": "{{serviceName}}-Anfrage ist abgelaufen",
+    "connection_failed": "Verbindung zu {{serviceName}} fehlgeschlagen",
+    "maintenance": "{{serviceName}} befindet sich in Wartung",
+    "rate_limit_exceeded": "Zu viele Anfragen. Limit: {{limit}} Anfragen pro {{window}}ms"
+  },
+  "database": {
+    "connection_failed": "Datenbankverbindung fehlgeschlagen",
+    "operation_failed": "{{operation}} auf {{tableName}} fehlgeschlagen: {{reason}}",
+    "constraint_violation": "Datenbank-Constraint-Verletzung",
+    "transaction_failed": "Datenbanktransaktion fehlgeschlagen",
+    "migration_failed": "Datenbankmigration fehlgeschlagen"
+  },
+  "cache": {
+    "operation_failed": "{{operation}} auf Cache-Schlüssel '{{key}}' fehlgeschlagen: {{reason}}",
+    "connection_lost": "Cache-Verbindung verloren",
+    "timeout": "Cache-Operation abgelaufen",
+    "memory_full": "Cache-Speicher ist voll"
+  },
+  "external_api": {
+    "error": "{{apiName}} API-Fehler bei {{endpoint}}: {{errorMessage}}",
+    "timeout": "{{apiName}} API-Anfrage ist abgelaufen",
+    "rate_limited": "{{apiName}} API-Rate-Limit überschritten",
+    "unauthorized": "Nicht autorisierter Zugriff auf {{apiName}} API",
+    "service_down": "{{apiName}} API-Service ist nicht verfügbar"
+  },
+  "general": {
+    "internal_error": "Ein unerwarteter Fehler ist aufgetreten",
+    "bad_request": "Fehlerhafte Anfrage - bitte überprüfen Sie Ihre Eingabe",
+    "unauthorized": "Sie sind nicht berechtigt, diese Aktion auszuführen",
+    "forbidden": "Zugriff auf diese Ressource ist verboten",
+    "not_found": "Die angeforderte Ressource wurde nicht gefunden",
+    "method_not_allowed": "Diese HTTP-Methode ist nicht erlaubt",
+    "conflict": "Es gibt einen Konflikt mit dem aktuellen Zustand der Ressource",
+    "gone": "Die angeforderte Ressource ist nicht mehr verfügbar",
+    "payload_too_large": "Die Anfrage-Payload ist zu groß",
+    "unsupported_media_type": "Nicht unterstützter Medientyp",
+    "too_many_requests": "Zu viele Anfragen - bitte versuchen Sie es später erneut",
+    "service_unavailable": "Service vorübergehend nicht verfügbar"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "validation": {
+    "required": "This field is required",
+    "email_format": "Please enter a valid email address",
+    "min_length": "Must be at least {{min}} characters long",
+    "max_length": "Must be no more than {{max}} characters long",
+    "numeric": "Must be a valid number",
+    "integer": "Must be a whole number",
+    "positive": "Must be a positive number",
+    "between": "Must be between {{min}} and {{max}}",
+    "date_format": "Please enter a valid date",
+    "url_format": "Please enter a valid URL",
+    "phone_format": "Please enter a valid phone number"
+  },
+  "business_logic": {
+    "title": "Business Logic Error",
+    "user_action_forbidden": "You cannot perform this action due to business rules",
+    "insufficient_balance": "Insufficient balance to complete this transaction",
+    "operation_not_allowed": "This operation is not allowed in the current state",
+    "quota_exceeded": "You have exceeded your quota limit",
+    "resource_locked": "This resource is currently locked",
+    "duplicate_operation": "This operation has already been performed"
+  },
+  "resource": {
+    "not_found": "{{resourceType}} with identifier '{{identifier}}' was not found",
+    "already_exists": "{{resourceType}} with {{field}} '{{value}}' already exists",
+    "access_denied": "You do not have permission to access this {{resourceType}}",
+    "modification_denied": "You do not have permission to modify this {{resourceType}}",
+    "deletion_denied": "You do not have permission to delete this {{resourceType}}"
+  },
+  "service": {
+    "unavailable": "{{serviceName}} is currently unavailable: {{reason}}",
+    "timeout": "{{serviceName}} request timed out",
+    "connection_failed": "Failed to connect to {{serviceName}}",
+    "maintenance": "{{serviceName}} is under maintenance",
+    "rate_limit_exceeded": "Too many requests. Limit: {{limit}} requests per {{window}}ms"
+  },
+  "database": {
+    "connection_failed": "Database connection failed",
+    "operation_failed": "Failed to {{operation}} on {{tableName}}: {{reason}}",
+    "constraint_violation": "Database constraint violation",
+    "transaction_failed": "Database transaction failed",
+    "migration_failed": "Database migration failed"
+  },
+  "cache": {
+    "operation_failed": "Failed to {{operation}} cache key '{{key}}': {{reason}}",
+    "connection_lost": "Cache connection lost",
+    "timeout": "Cache operation timed out",
+    "memory_full": "Cache memory is full"
+  },
+  "external_api": {
+    "error": "{{apiName}} API error at {{endpoint}}: {{errorMessage}}",
+    "timeout": "{{apiName}} API request timed out",
+    "rate_limited": "{{apiName}} API rate limit exceeded",
+    "unauthorized": "{{apiName}} API unauthorized access",
+    "service_down": "{{apiName}} API service is down"
+  },
+  "general": {
+    "internal_error": "An unexpected error occurred",
+    "bad_request": "Bad request - please check your input",
+    "unauthorized": "You are not authorized to perform this action",
+    "forbidden": "Access to this resource is forbidden",
+    "not_found": "The requested resource was not found",
+    "method_not_allowed": "This HTTP method is not allowed",
+    "conflict": "There is a conflict with the current state of the resource",
+    "gone": "The requested resource is no longer available",
+    "payload_too_large": "The request payload is too large",
+    "unsupported_media_type": "Unsupported media type",
+    "too_many_requests": "Too many requests - please try again later",
+    "service_unavailable": "Service temporarily unavailable"
+  }
+}

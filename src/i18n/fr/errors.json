@@ -1,0 +1,72 @@
+{
+  "validation": {
+    "required": "Ce champ est obligatoire",
+    "email_format": "Veuillez entrer une adresse email valide",
+    "min_length": "Doit contenir au moins {{min}} caractères",
+    "max_length": "Doit contenir au maximum {{max}} caractères",
+    "numeric": "Doit être un nombre valide",
+    "integer": "Doit être un nombre entier",
+    "positive": "Doit être un nombre positif",
+    "between": "Doit être entre {{min}} et {{max}}",
+    "date_format": "Veuillez entrer une date valide",
+    "url_format": "Veuillez entrer une URL valide",
+    "phone_format": "Veuillez entrer un numéro de téléphone valide"
+  },
+  "business_logic": {
+    "title": "Erreur de Logique Métier",
+    "user_action_forbidden": "Vous ne pouvez pas effectuer cette action en raison des règles métier",
+    "insufficient_balance": "Solde insuffisant pour compléter cette transaction",
+    "operation_not_allowed": "Cette opération n'est pas autorisée dans l'état actuel",
+    "quota_exceeded": "Vous avez dépassé votre limite de quota",
+    "resource_locked": "Cette ressource est actuellement verrouillée",
+    "duplicate_operation": "Cette opération a déjà été effectuée"
+  },
+  "resource": {
+    "not_found": "{{resourceType}} avec l'identifiant '{{identifier}}' n'a pas été trouvé",
+    "already_exists": "{{resourceType}} avec {{field}} '{{value}}' existe déjà",
+    "access_denied": "Vous n'avez pas la permission d'accéder à ce {{resourceType}}",
+    "modification_denied": "Vous n'avez pas la permission de modifier ce {{resourceType}}",
+    "deletion_denied": "Vous n'avez pas la permission de supprimer ce {{resourceType}}"
+  },
+  "service": {
+    "unavailable": "{{serviceName}} est actuellement indisponible : {{reason}}",
+    "timeout": "La demande à {{serviceName}} a expiré",
+    "connection_failed": "Échec de la connexion à {{serviceName}}",
+    "maintenance": "{{serviceName}} est en maintenance",
+    "rate_limit_exceeded": "Trop de demandes. Limite : {{limit}} demandes par {{window}}ms"
+  },
+  "database": {
+    "connection_failed": "Échec de la connexion à la base de données",
+    "operation_failed": "Échec de {{operation}} sur {{tableName}} : {{reason}}",
+    "constraint_violation": "Violation de contrainte de base de données",
+    "transaction_failed": "Échec de la transaction de base de données",
+    "migration_failed": "Échec de la migration de base de données"
+  },
+  "cache": {
+    "operation_failed": "Échec de {{operation}} sur la clé de cache '{{key}}' : {{reason}}",
+    "connection_lost": "Connexion au cache perdue",
+    "timeout": "Opération de cache expirée",
+    "memory_full": "La mémoire du cache est pleine"
+  },
+  "external_api": {
+    "error": "Erreur de l'API {{apiName}} sur {{endpoint}} : {{errorMessage}}",
+    "timeout": "La demande à l'API {{apiName}} a expiré",
+    "rate_limited": "Limite de débit de l'API {{apiName}} dépassée",
+    "unauthorized": "Accès non autorisé à l'API {{apiName}}",
+    "service_down": "Le service de l'API {{apiName}} est en panne"
+  },
+  "general": {
+    "internal_error": "Une erreur inattendue s'est produite",
+    "bad_request": "Mauvaise demande - veuillez vérifier votre saisie",
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+    "forbidden": "L'accès à cette ressource est interdit",
+    "not_found": "La ressource demandée n'a pas été trouvée",
+    "method_not_allowed": "Cette méthode HTTP n'est pas autorisée",
+    "conflict": "Il y a un conflit avec l'état actuel de la ressource",
+    "gone": "La ressource demandée n'est plus disponible",
+    "payload_too_large": "La charge utile de la demande est trop grande",
+    "unsupported_media_type": "Type de média non pris en charge",
+    "too_many_requests": "Trop de demandes - veuillez réessayer plus tard",
+    "service_unavailable": "Service temporairement indisponible"
+  }
+}

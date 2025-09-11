@@ -1,0 +1,47 @@
+{
+  "greeting": "Bonjour",
+  "welcome": "Bienvenue sur FleetStack",
+  "goodbye": "Au revoir",
+  "hello_with_name": "Bonjour, {{name}} !",
+  "welcome_with_name": "Bon retour, {{name}} !",
+  "success": "Succès",
+  "error": "Erreur",
+  "warning": "Avertissement",
+  "info": "Information",
+  "loading": "Chargement...",
+  "save": "Enregistrer",
+  "cancel": "Annuler",
+  "delete": "Supprimer",
+  "edit": "Modifier",
+  "view": "Voir",
+  "create": "Créer",
+  "update": "Mettre à jour",
+  "search": "Rechercher",
+  "filter": "Filtrer",
+  "reset": "Réinitialiser",
+  "submit": "Soumettre",
+  "close": "Fermer",
+  "open": "Ouvrir",
+  "yes": "Oui",
+  "no": "Non",
+  "ok": "OK",
+  "items_count": {
+    "0": "Aucun élément",
+    "1": "Un élément",
+    "other": "{{count}} éléments"
+  },
+  "pagination": {
+    "showing": "Affichage de {{from}} à {{to}} sur {{total}} entrées",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "first": "Premier",
+    "last": "Dernier"
+  },
+  "time": {
+    "just_now": "À l'instant",
+    "minutes_ago": "il y a {{count}} minutes",
+    "hours_ago": "il y a {{count}} heures",
+    "days_ago": "il y a {{count}} jours",
+    "weeks_ago": "il y a {{count}} semaines"
+  }
+}

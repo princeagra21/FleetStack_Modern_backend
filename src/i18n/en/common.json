@@ -1,0 +1,47 @@
+{
+  "greeting": "Hello",
+  "welcome": "Welcome to FleetStack",
+  "goodbye": "Goodbye",
+  "hello_with_name": "Hello, {{name}}!",
+  "welcome_with_name": "Welcome back, {{name}}!",
+  "success": "Success",
+  "error": "Error",
+  "warning": "Warning",
+  "info": "Information",
+  "loading": "Loading...",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "view": "View",
+  "create": "Create",
+  "update": "Update",
+  "search": "Search",
+  "filter": "Filter",
+  "reset": "Reset",
+  "submit": "Submit",
+  "close": "Close",
+  "open": "Open",
+  "yes": "Yes",
+  "no": "No",
+  "ok": "OK",
+  "items_count": {
+    "0": "No items",
+    "1": "One item",
+    "other": "{{count}} items"
+  },
+  "pagination": {
+    "showing": "Showing {{from}} to {{to}} of {{total}} entries",
+    "previous": "Previous",
+    "next": "Next",
+    "first": "First",
+    "last": "Last"
+  },
+  "time": {
+    "just_now": "Just now",
+    "minutes_ago": "{{count}} minutes ago",
+    "hours_ago": "{{count}} hours ago",
+    "days_ago": "{{count}} days ago",
+    "weeks_ago": "{{count}} weeks ago"
+  }
+}

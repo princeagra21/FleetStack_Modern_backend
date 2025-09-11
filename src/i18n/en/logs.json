@@ -1,0 +1,60 @@
+{
+  "service": {
+    "starting": "{{serviceName}} service is starting...",
+    "started": "{{serviceName}} service started successfully",
+    "stopping": "{{serviceName}} service is stopping...",
+    "stopped": "{{serviceName}} service stopped",
+    "restarting": "{{serviceName}} service is restarting...",
+    "error": "{{serviceName}} service encountered an error: {{error}}",
+    "warning": "{{serviceName}} service warning: {{message}}",
+    "info": "{{serviceName}} service info: {{message}}"
+  },
+  "database": {
+    "connecting": "Connecting to database...",
+    "connected": "Successfully connected to database",
+    "disconnected": "Disconnected from database",
+    "connection_error": "Database connection error: {{error}}",
+    "query_executed": "Database query executed: {{query}}",
+    "query_failed": "Database query failed: {{error}}",
+    "migration_started": "Database migration started",
+    "migration_completed": "Database migration completed",
+    "migration_failed": "Database migration failed: {{error}}"
+  },
+  "cache": {
+    "connecting": "Connecting to cache server...",
+    "connected": "Successfully connected to cache server",
+    "disconnected": "Disconnected from cache server",
+    "connection_error": "Cache connection error: {{error}}",
+    "operation_success": "Cache operation {{operation}} successful for key: {{key}}",
+    "operation_failed": "Cache operation {{operation}} failed for key: {{key}} - {{error}}",
+    "cache_hit": "Cache hit for key: {{key}}",
+    "cache_miss": "Cache miss for key: {{key}}"
+  },
+  "auth": {
+    "login_attempt": "Login attempt for user: {{username}}",
+    "login_success": "User {{username}} logged in successfully",
+    "login_failed": "Login failed for user: {{username}} - {{reason}}",
+    "logout": "User {{username}} logged out",
+    "token_generated": "JWT token generated for user: {{username}}",
+    "token_expired": "JWT token expired for user: {{username}}",
+    "invalid_token": "Invalid JWT token received",
+    "permission_denied": "Permission denied for user {{username}} on resource {{resource}}"
+  },
+  "api": {
+    "request_received": "{{method}} {{url}} - Request received from {{ip}}",
+    "request_completed": "{{method}} {{url}} - Completed in {{duration}}ms with status {{status}}",
+    "request_failed": "{{method}} {{url}} - Failed with error: {{error}}",
+    "rate_limit_exceeded": "Rate limit exceeded for IP: {{ip}}",
+    "invalid_request": "Invalid request: {{error}}",
+    "validation_failed": "Request validation failed: {{errors}}"
+  },
+  "system": {
+    "startup": "Application starting up...",
+    "ready": "Application is ready and listening on port {{port}}",
+    "shutdown": "Application is shutting down...",
+    "memory_usage": "Memory usage: {{used}}MB / {{total}}MB",
+    "cpu_usage": "CPU usage: {{percentage}}%",
+    "disk_usage": "Disk usage: {{used}}GB / {{total}}GB ({{percentage}}%)",
+    "health_check": "Health check {{status}} - {{details}}"
+  }
+}

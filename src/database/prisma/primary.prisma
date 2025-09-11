@@ -1,0 +1,76 @@
+// This is your Prisma schema file for FleetStack_db (Primary Database)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/primary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PRIMARY_DATABASE_URL")
+}
+
+// Primary Database Models (Users, Authentication, Main Application Data)
+
+enum LoginType {
+  superadmin
+  admin
+  user
+  subsuer
+}
+
+model Users {
+  uid               Int        @id @default(autoincrement())
+  login_type        LoginType
+  Name              String
+  Email             String     @unique
+  is_email_verified Boolean    @default(false)
+  mobile_prefix     String?
+  mobile_number     BigInt?
+  profile_url       String?
+  username          String     @unique
+  password          String
+  credits           BigInt     @default(0)
+  mfa_enabled       Boolean    @default(false)
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  deleted_at        DateTime?
+  last_login        DateTime?
+  is_active         Boolean    @default(true)
+
+  @@map("users")
+}
+
+// Fleet Management Models
+model Fleet {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  vehicles Vehicle[]
+
+  @@map("fleets")
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  fleetId      String
+  licensePlate String   @unique
+  make         String
+  model        String
+  year         Int
+  vin          String?  @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  fleet Fleet @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+
+  @@map("vehicles")
+}

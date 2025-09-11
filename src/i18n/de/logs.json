@@ -1,0 +1,60 @@
+{
+  "service": {
+    "starting": "{{serviceName}}-Service startet...",
+    "started": "{{serviceName}}-Service erfolgreich gestartet",
+    "stopping": "{{serviceName}}-Service wird gestoppt...",
+    "stopped": "{{serviceName}}-Service gestoppt",
+    "restarting": "{{serviceName}}-Service wird neu gestartet...",
+    "error": "{{serviceName}}-Service hat einen Fehler festgestellt: {{error}}",
+    "warning": "{{serviceName}}-Service Warnung: {{message}}",
+    "info": "{{serviceName}}-Service Info: {{message}}"
+  },
+  "database": {
+    "connecting": "Verbindung zur Datenbank wird hergestellt...",
+    "connected": "Erfolgreich mit der Datenbank verbunden",
+    "disconnected": "Von der Datenbank getrennt",
+    "connection_error": "Datenbankverbindungsfehler: {{error}}",
+    "query_executed": "Datenbankabfrage ausgeführt: {{query}}",
+    "query_failed": "Datenbankabfrage fehlgeschlagen: {{error}}",
+    "migration_started": "Datenbankmigration gestartet",
+    "migration_completed": "Datenbankmigration abgeschlossen",
+    "migration_failed": "Datenbankmigration fehlgeschlagen: {{error}}"
+  },
+  "cache": {
+    "connecting": "Verbindung zum Cache-Server wird hergestellt...",
+    "connected": "Erfolgreich mit dem Cache-Server verbunden",
+    "disconnected": "Vom Cache-Server getrennt",
+    "connection_error": "Cache-Verbindungsfehler: {{error}}",
+    "operation_success": "Cache-Operation {{operation}} erfolgreich für Schlüssel: {{key}}",
+    "operation_failed": "Cache-Operation {{operation}} fehlgeschlagen für Schlüssel: {{key}} - {{error}}",
+    "cache_hit": "Cache-Treffer für Schlüssel: {{key}}",
+    "cache_miss": "Cache-Fehlschlag für Schlüssel: {{key}}"
+  },
+  "auth": {
+    "login_attempt": "Anmeldeversuch für Benutzer: {{username}}",
+    "login_success": "Benutzer {{username}} erfolgreich angemeldet",
+    "login_failed": "Anmeldung fehlgeschlagen für Benutzer: {{username}} - {{reason}}",
+    "logout": "Benutzer {{username}} abgemeldet",
+    "token_generated": "JWT-Token für Benutzer generiert: {{username}}",
+    "token_expired": "JWT-Token abgelaufen für Benutzer: {{username}}",
+    "invalid_token": "Ungültiger JWT-Token erhalten",
+    "permission_denied": "Berechtigung verweigert für Benutzer {{username}} auf Ressource {{resource}}"
+  },
+  "api": {
+    "request_received": "{{method}} {{url}} - Anfrage erhalten von {{ip}}",
+    "request_completed": "{{method}} {{url}} - Abgeschlossen in {{duration}}ms mit Status {{status}}",
+    "request_failed": "{{method}} {{url}} - Fehlgeschlagen mit Fehler: {{error}}",
+    "rate_limit_exceeded": "Rate-Limit überschritten für IP: {{ip}}",
+    "invalid_request": "Ungültige Anfrage: {{error}}",
+    "validation_failed": "Anfrage-Validierung fehlgeschlagen: {{errors}}"
+  },
+  "system": {
+    "startup": "Anwendung startet...",
+    "ready": "Anwendung ist bereit und hört auf Port {{port}}",
+    "shutdown": "Anwendung wird heruntergefahren...",
+    "memory_usage": "Speicherverbrauch: {{used}}MB / {{total}}MB",
+    "cpu_usage": "CPU-Auslastung: {{percentage}}%",
+    "disk_usage": "Festplattenverbrauch: {{used}}GB / {{total}}GB ({{percentage}}%)",
+    "health_check": "Gesundheitsprüfung {{status}} - {{details}}"
+  }
+}
