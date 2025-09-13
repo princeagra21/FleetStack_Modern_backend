@@ -21,6 +21,8 @@ import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.int
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { SuperAdminModule } from './modules/SuperAdmin/superadmin.module';
+
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     UsersModule,
     QueueModule,
     ExamplesModule,
+    SuperAdminModule
   ],
   controllers: [AppController],
   providers: [

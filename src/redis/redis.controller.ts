@@ -161,8 +161,8 @@ export class RedisController {
       select: {
         uid: true,
         username: true,
-        Name: true,
-        Email: true,
+        name: true,
+        email: true,
         login_type: true,
         credits: true,
         created_at: true,

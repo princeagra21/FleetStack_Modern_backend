@@ -2,6 +2,8 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { Redis } from 'ioredis';
 import { PrimaryDatabaseService } from '../database/services/primary-database.service';
 import { ConfigService } from '../config/config.service';
+import { spawn } from 'child_process';
+import * as net from 'net';
 
 // Circuit Breaker States
 enum CircuitBreakerState {
@@ -205,10 +207,24 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // 🚨 DISABLED: Dangerous bulk sync removed for enterprise security
       // await this.syncUsersTableOnStartup();
       this.logger.log('✅ Redis connected successfully - using cache-aside pattern for security');
-    } catch (error) {
-      this.logger.warn('⚠️ Redis unavailable at startup - application will run with graceful degradation:', error.message);
-      this.isRedisAvailable = false;
-      this.openCircuit('Failed to connect during initialization');
+    } catch (error: any) {
+      this.logger.warn('⚠️ Redis unavailable at startup - attempting to auto-start local Redis if configured:', error?.message);
+
+      // Try to auto-start a local Redis server only for localhost setups
+      if (await this.tryStartLocalRedis()) {
+        this.logger.log('🔁 Retrying Redis connection after starting local server...');
+        try {
+          await this.connectWithTimeout();
+          this.logger.log('✅ Redis connected after auto-start');
+        } catch (err: any) {
+          this.logger.warn('⚠️ Redis still unavailable after auto-start attempt:', err?.message);
+          this.isRedisAvailable = false;
+          this.openCircuit('Failed to connect after auto-start');
+        }
+      } else {
+        this.isRedisAvailable = false;
+        this.openCircuit('Failed to connect during initialization');
+      }
       // Don't throw - allow application to start without Redis
     }
   }
@@ -276,7 +292,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         select: {
           uid: true,
           username: true,
-          Name: true,
+          name: true,
           // Email excluded for security
           login_type: true,
           credits: true,
@@ -296,7 +312,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           const userData = {
             uid: user.uid,
             username: user.username,
-            name: user.Name,
+            name: user.name,
             // Email excluded for security
             login_type: user.login_type,
             credits: user.credits.toString(), // Convert BigInt to string
@@ -312,7 +328,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         // Create username to uid mapping for faster lookups
         const usernamePipeline = this.client.pipeline();
         for (const user of users) {
-          usernamePipeline.set(`username:${user.username}`, user.uid, 'EX', 300);
+          usernamePipeline.set(`username:${user.username}`, user.uid.toString(), 'EX', 300);
         }
         await usernamePipeline.exec();
       });
@@ -362,7 +378,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         select: {
           uid: true,
           username: true,
-          Name: true,
+          name: true,
           login_type: true,
           credits: true,
           created_at: true,
@@ -381,7 +397,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return {
         uid: user.uid,
         username: user.username,
-        name: user.Name,
+        name: user.name,
         login_type: user.login_type,
         credits: user.credits.toString(),
         createdAt: user.created_at,
@@ -405,7 +421,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       const cacheData = {
         uid: user.uid.toString(),
         username: user.username,
-        name: user.Name,
+        name: user.name,
         login_type: user.login_type,
         credits: user.credits.toString(),
         createdAt: user.created_at?.toISOString(),
@@ -446,7 +462,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         where: {
           OR: [
             { username: username },
-            { Email: username }
+            { email: username }
           ],
           is_active: true,
           deleted_at: null,
@@ -454,7 +470,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         select: {
           uid: true,
           username: true,
-          Name: true,
+          name: true,
           login_type: true,
           credits: true,
           created_at: true,
@@ -468,7 +484,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         return {
           uid: user.uid,
           username: user.username,
-          name: user.Name,
+          name: user.name,
           login_type: user.login_type,
           credits: user.credits.toString(),
           createdAt: user.created_at,
@@ -483,7 +499,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async tryCacheUsernameMapping(username: string, uid: number) {
+  private async tryCacheUsernameMapping(username: string, uid: number | string | bigint) {
     if (!this.canAttemptOperation() || !this.isRedisAvailable) {
       return;
     }
@@ -501,7 +517,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * 🚨 SECURITY FIXED: Set user data with graceful degradation
    * Excludes email and uses short 5-minute TTL for enterprise security
    */
-  async setUser(uid: number, userData: any): Promise<void> {
+  async setUser(uid: number | string | bigint, userData: any): Promise<void> {
     if (!this.canAttemptOperation() || !this.isRedisAvailable) {
       this.logger.debug(`Redis setUser operation skipped (circuit breaker): ${uid}`);
       return; // Graceful degradation - don't fail user operations
@@ -513,7 +529,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       const dataToStore = {
         uid: userData.uid,
         username: userData.username,
-        name: userData.Name || userData.name,
+        name: userData.name || userData.Name,
         // EMAIL EXCLUDED FOR SECURITY - fetch from DB when needed
         login_type: userData.login_type,
         credits: userData.credits?.toString() || '0',
@@ -527,7 +543,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         
         // Update username mapping with consistent short TTL
         if (userData.username) {
-          await this.client.set(`username:${userData.username}`, uid, 'EX', 300);
+          await this.client.set(`username:${userData.username}`, uid.toString(), 'EX', 300);
         }
       });
       
@@ -585,6 +601,132 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.handleRedisError(error as Error);
       throw error;
     }
+  }
+
+  /**
+   * Attempt to auto-start a local Redis server if the configuration points to localhost.
+   * This is a best-effort helper for local development on Windows/macOS/Linux.
+   * You can override the executable path with REDIS_SERVER_CMD and config file via REDIS_CONF.
+   */
+  private async tryStartLocalRedis(): Promise<boolean> {
+    try {
+      if (!this.isLocalRedisConfig()) {
+        this.logger.debug('⏭️ Auto-start skipped: Redis host is not local');
+        return false;
+      }
+
+      const command = process.env.REDIS_SERVER_CMD || 'redis-server';
+      const isWindows = process.platform === 'win32';
+      const conf = process.env.REDIS_CONF; // optional redis.conf path
+
+      const args: string[] = [];
+      if (!isWindows) {
+        // Daemonize on Unix-like systems so it runs in background
+        args.push('--daemonize', 'yes');
+      }
+      if (conf) {
+        args.push(conf);
+      }
+
+      this.logger.log(`🟢 Attempting to start local Redis server: ${command} ${args.join(' ')}`);
+
+      // Start detached so it doesn't block the Node process
+      const child = spawn(command, args, {
+        detached: true,
+        stdio: 'ignore',
+        shell: isWindows, // allow .exe resolution and PATH lookup on Windows
+      });
+
+      // Detach child so it can continue running independently
+      child.unref();
+
+      // Wait for Redis to be ready
+      const { host, port } = this.getTargetHostPort();
+      const ready = await this.waitForRedisReady(host, port, 15000);
+
+      if (ready) {
+        this.logger.log('✅ Local Redis server started and is ready');
+      } else {
+        this.logger.warn('⏳ Local Redis server did not become ready within timeout');
+      }
+      return ready;
+    } catch (error: any) {
+      this.logger.warn(`❌ Failed to auto-start local Redis server: ${error?.message || error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Determine if Redis configuration targets localhost.
+   */
+  private isLocalRedisConfig(): boolean {
+    try {
+      const redisUrl = process.env.REDIS_URL;
+      if (redisUrl) {
+        const u = new URL(redisUrl);
+        return ['127.0.0.1', 'localhost'].includes(u.hostname.toLowerCase());
+      }
+      const host = (process.env.REDIS_HOST || '127.0.0.1').toLowerCase();
+      return ['127.0.0.1', 'localhost'].includes(host);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get target host/port for readiness checks.
+   */
+  private getTargetHostPort(): { host: string; port: number } {
+    const redisUrl = process.env.REDIS_URL;
+    if (redisUrl) {
+      try {
+        const u = new URL(redisUrl);
+        return { host: u.hostname, port: parseInt(u.port || '6379', 10) };
+      } catch {
+        // Fall through to env host/port
+      }
+    }
+    return {
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    };
+  }
+
+  /**
+   * Polls until a TCP connection to Redis succeeds or timeout is reached.
+   */
+  private async waitForRedisReady(host: string, port: number, timeoutMs: number): Promise<boolean> {
+    const start = Date.now();
+
+    return await new Promise<boolean>((resolve) => {
+      const tryOnce = () => {
+        const socket = new net.Socket();
+        let done = false;
+
+        const cleanup = () => {
+          socket.removeAllListeners();
+          try { socket.destroy(); } catch {}
+        };
+
+        socket.once('connect', () => {
+          done = true;
+          cleanup();
+          resolve(true);
+        });
+        socket.once('error', () => {
+          cleanup();
+          if (Date.now() - start >= timeoutMs) {
+            if (!done) resolve(false);
+          } else {
+            setTimeout(tryOnce, 500);
+          }
+        });
+
+        socket.connect(port, host);
+      };
+
+      tryOnce();
+    });
   }
 
   /**

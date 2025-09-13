@@ -20,6 +20,11 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@prisma/primary": ["./node_modules/@prisma/primary"],
+      "@prisma/address": ["./node_modules/@prisma/address"],
+      "@prisma/logs": ["./node_modules/@prisma/logs"]
+    }
   }
 }

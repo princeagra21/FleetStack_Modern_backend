@@ -1,0 +1,13 @@
+{
+  "username": "superadmin",
+  "email": "superadmin@example.com",
+  "password": "SuperSecure123!",
+  "name": "Super Administrator",
+  "mobile_prefix": "+1",
+  "mobile_number": "1234567890",
+  "profile_url": "https://example.com/profile.jpg",
+  "is_active": true,
+  "is_email_verified": true,
+  "mfa_enabled": false,
+  "credits": "1000"
+}

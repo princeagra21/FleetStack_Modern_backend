@@ -47,7 +47,7 @@ export class AuthService {
         where: {
           OR: [
             { username: username },
-            { Email: username }, // Allow login with email or username
+            { email: username }, // Allow login with email or username
           ],
           is_active: true,
           deleted_at: null,
@@ -58,7 +58,7 @@ export class AuthService {
         return null;
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       if (!isPasswordValid) {
         return null;
       }
@@ -69,7 +69,7 @@ export class AuthService {
         data: { last_login: new Date() },
       });
 
-      const { password: _, ...result } = user;
+      const { password_hash: _, ...result } = user;
       return result;
     } catch (error) {
       throw new UnauthorizedException('Authentication failed');
@@ -98,7 +98,7 @@ export class AuthService {
         where: {
           OR: [
             { username: userData.username },
-            { Email: userData.email },
+            { email: userData.email },
           ],
         },
       });
@@ -114,10 +114,10 @@ export class AuthService {
       const newUser = await this.primaryDatabase.users.create({
         data: {
           username: userData.username,
-          Email: userData.email,
-          password: hashedPassword,
-          Name: userData.name,
-          login_type: userData.login_type || LoginType.user,
+          email: userData.email,
+          password_hash: hashedPassword,
+          name: userData.name,
+          login_type: userData.login_type ?? LoginType.USER,
           is_active: true,
           is_email_verified: false,
           credits: 0n,
@@ -125,7 +125,7 @@ export class AuthService {
         },
       });
 
-      const { password: _, ...userResult } = newUser;
+      const { password_hash: _, ...userResult } = newUser;
       return await this.generateTokenResponse(userResult);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -139,7 +139,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.uid,
       username: user.username,
-      email: user.Email,
+      email: user.email,
       role: user.login_type,
     };
 
@@ -165,9 +165,9 @@ export class AuthService {
       user: {
         uid: user.uid,
         username: user.username,
-        email: user.Email,
+        email: user.email,
         role: user.login_type,
-        name: user.Name,
+        name: user.name,
         credits: typeof user.credits === 'bigint' ? user.credits.toString() : user.credits,
       },
     };
@@ -214,7 +214,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const { password: _, credits, ...result } = user;
+    const { password_hash: _, credits, ...result } = user;
     return {
       ...result,
       credits: credits.toString(), // Convert BigInt to string

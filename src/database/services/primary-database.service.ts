@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/primary';
 import { ConfigService } from '../../config/config.service';
+import { DatabaseEarlyInitService } from './database-early-init.service';
 
 @Injectable()
 export class PrimaryDatabaseService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -99,6 +100,16 @@ export class PrimaryDatabaseService extends PrismaClient implements OnModuleInit
   }
 
   async onModuleInit() {
+    // Wait a moment for early initialization to complete
+    let retries = 0;
+    const maxRetries = 10;
+    
+    while (!DatabaseEarlyInitService.isInitialized() && retries < maxRetries) {
+      this.logger.debug(`Waiting for database initialization... (${retries + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      retries++;
+    }
+    
     try {
       const startTime = Date.now();
       await this.$connect();
@@ -110,9 +121,18 @@ export class PrimaryDatabaseService extends PrismaClient implements OnModuleInit
       // Connection Pool Health Check
       await this.runHealthCheck();
       
-    } catch (error) {
-      this.logger.error('❌ Failed to connect to primary database:', error);
+    } catch (error: any) {
       this.connectionHealthy = false;
+      
+      // Check if it's a database not found error (P1003)
+      if (error?.code === 'P1003' || error?.message?.includes('does not exist')) {
+        this.logger.warn('⚠️ Primary database does not exist yet - this might be expected during first startup');
+        // Don't throw error - database might be created later
+        return;
+      }
+      
+      // For other errors, log and throw
+      this.logger.error('❌ Failed to connect to primary database:', error);
       throw error;
     }
   }

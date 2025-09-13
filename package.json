@@ -30,6 +30,7 @@
     "prisma:generate:logs": "prisma generate --schema=src/database/prisma/logs.prisma",
     "prisma:generate:address": "prisma generate --schema=src/database/prisma/address.prisma",
     "prisma:generate:all": "npm run prisma:generate:primary && npm run prisma:generate:logs && npm run prisma:generate:address",
+    "prisma:ensure-clients": "node scripts/ensure-prisma-clients.js",
     "prisma:migrate:primary": "prisma migrate dev --schema=src/database/prisma/primary.prisma --name",
     "prisma:migrate:logs": "prisma migrate dev --schema=src/database/prisma/logs.prisma --name",
     "prisma:migrate:address": "prisma migrate dev --schema=src/database/prisma/address.prisma --name",
@@ -42,33 +43,54 @@
     "prisma:reset:address": "prisma migrate reset --schema=src/database/prisma/address.prisma --force",
     "prisma:studio:primary": "prisma studio --schema=src/database/prisma/primary.prisma",
     "prisma:studio:logs": "prisma studio --schema=src/database/prisma/logs.prisma",
-    "prisma:studio:address": "prisma studio --schema=src/database/prisma/address.prisma"
+    "prisma:studio:address": "prisma studio --schema=src/database/prisma/address.prisma",
+    "postinstall": "npm run prisma:generate:all"
   },
   "dependencies": {
+    "@bull-board/api": "^6.12.7",
+    "@bull-board/fastify": "^6.12.7",
+    "@bull-board/nestjs": "^6.12.7",
     "@fastify/compress": "^8.0.1",
     "@fastify/cors": "^11.0.0",
     "@fastify/helmet": "^13.0.0",
     "@fastify/rate-limit": "^10.1.1",
     "@fastify/under-pressure": "^9.0.0",
+    "@nest-lab/throttler-storage-redis": "^1.1.0",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/bullmq": "^11.0.3",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-fastify": "^11.1.6",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
+    "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^6.16.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.15.5",
+    "@types/winston": "^2.4.4",
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
     "bullmq": "^5.58.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
     "ioredis": "^5.7.0",
+    "nestjs-i18n": "^10.5.1",
+    "node-cron": "^4.2.1",
+    "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "prisma": "^6.16.0",
+    "public-ip": "^7.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -111,5 +133,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
