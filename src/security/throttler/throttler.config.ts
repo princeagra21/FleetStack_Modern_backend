@@ -102,8 +102,16 @@ export class ThrottlerConfigService implements OnModuleDestroy {
 
     this.shutdownPromise = new Promise(async (resolve) => {
       try {
-        if (this.redisClient && this.redisClient.status !== 'end') {
-          await this.redisClient.quit();
+        if (this.redisClient) {
+          try {
+            if (this.redisClient.status === 'ready') {
+              await this.redisClient.quit();
+            } else {
+              this.redisClient.disconnect(false);
+            }
+          } catch (e) {
+            try { this.redisClient.disconnect(false); } catch { }
+          }
         }
         this.logger.log('✅ Throttler Redis shutdown complete');
       } catch (error) {

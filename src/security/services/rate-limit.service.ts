@@ -37,13 +37,13 @@ export class RateLimitService implements OnModuleDestroy {
       connectTimeout: 5000,
       retryStrategy: (times) => Math.min(times * 100, 2000),
     });
-    
+
     this.keyPrefix = '';  // Using Redis keyPrefix instead
-    
+
     this.redis.on('connect', () => {
       this.logger.log('Rate limit Redis client connected');
     });
-    
+
     this.redis.on('error', (error) => {
       this.logger.error('Rate limit Redis error:', error.message);
     });
@@ -55,7 +55,7 @@ export class RateLimitService implements OnModuleDestroy {
     config: RateLimitConfig
   ): Promise<RateLimitResult> {
     const key = `${clientIP}:${endpoint}`; // Key prefix is handled by Redis client
-    
+
     // Use circuit breaker to protect Redis operations
     return this.circuitBreaker.execute(
       async () => {
@@ -63,29 +63,29 @@ export class RateLimitService implements OnModuleDestroy {
         const pipeline = this.redis.pipeline();
         pipeline.incr(key);
         pipeline.ttl(key);
-        
+
         const results = await pipeline.exec();
-      
-      if (!results || results.length !== 2) {
-        throw new Error('Pipeline execution failed');
-      }
-      
-      const [incrResult, ttlResult] = results;
-      const currentCount = incrResult[1] as number;
-      const currentTTL = ttlResult[1] as number;
-      
-      // Set expiry on first request (when counter = 1)
-      if (currentCount === 1) {
-        await this.redis.expire(key, config.windowSeconds);
-      }
-      
-      const resetTime = currentTTL > 0 
-        ? Date.now() + (currentTTL * 1000)
-        : Date.now() + (config.windowSeconds * 1000);
-      
-      const remaining = Math.max(0, config.maxRequests - currentCount);
-      const allowed = currentCount <= config.maxRequests;
-      
+
+        if (!results || results.length !== 2) {
+          throw new Error('Pipeline execution failed');
+        }
+
+        const [incrResult, ttlResult] = results;
+        const currentCount = incrResult[1] as number;
+        const currentTTL = ttlResult[1] as number;
+
+        // Set expiry on first request (when counter = 1)
+        if (currentCount === 1) {
+          await this.redis.expire(key, config.windowSeconds);
+        }
+
+        const resetTime = currentTTL > 0
+          ? Date.now() + (currentTTL * 1000)
+          : Date.now() + (config.windowSeconds * 1000);
+
+        const remaining = Math.max(0, config.maxRequests - currentCount);
+        const allowed = currentCount <= config.maxRequests;
+
         return {
           allowed,
           remaining,
@@ -108,7 +108,7 @@ export class RateLimitService implements OnModuleDestroy {
 
   async getRateLimitStatus(clientIP: string, endpoint: string): Promise<number> {
     const key = `${clientIP}:${endpoint}`;
-    
+
     try {
       const count = await this.redis.get(key);
       return count ? parseInt(count, 10) : 0;
@@ -120,7 +120,7 @@ export class RateLimitService implements OnModuleDestroy {
 
   async resetRateLimit(clientIP: string, endpoint: string): Promise<boolean> {
     const key = `${clientIP}:${endpoint}`;
-    
+
     try {
       await this.redis.del(key);
       this.logger.log(`Rate limit reset for ${clientIP}:${endpoint}`);
@@ -143,9 +143,14 @@ export class RateLimitService implements OnModuleDestroy {
 
   async onModuleDestroy() {
     try {
-      await this.redis.quit();
+      if (this.redis.status === 'ready') {
+        await this.redis.quit();
+      } else {
+        this.redis.disconnect(false);
+      }
       this.logger.log('Rate limit Redis connection closed');
     } catch (error) {
+      try { this.redis.disconnect(false); } catch { }
       this.logger.error('Error closing rate limit Redis connection:', error.message);
     }
   }

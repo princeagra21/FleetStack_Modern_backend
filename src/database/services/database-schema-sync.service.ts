@@ -28,13 +28,13 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
     private readonly logsDb: LogsDatabaseService,
     private readonly addressDb: AddressDatabaseService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap() {
     // Schema synchronization is now handled by DatabaseEarlyInitService
     // This method is kept for backward compatibility and manual operations
     this.logger.log('🚀 DatabaseSchemaSyncService ready for manual operations');
-    
+
     // Only run full sync if early init didn't run (fallback)
     // This can happen in some edge cases or testing scenarios
     if (!process.env.SKIP_AUTO_SCHEMA_SYNC) {
@@ -68,7 +68,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         databaseName: this.extractDatabaseName(this.configService.primaryDatabase.url)
       },
       {
-        name: 'Logs Database', 
+        name: 'Logs Database',
         expectedTables: ['application_logs', 'audit_logs', 'system_logs', 'error_logs'],
         schemaPath: 'src/database/prisma/logs.prisma',
         service: this.logsDb,
@@ -79,7 +79,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       {
         name: 'Address Database',
         expectedTables: ['addresses', 'locations', 'geo_fences', 'routes'],
-        schemaPath: 'src/database/prisma/address.prisma', 
+        schemaPath: 'src/database/prisma/address.prisma',
         service: this.addressDb,
         migrateCommand: 'npm run prisma:deploy:address',
         databaseUrl: this.configService.addressDatabase.url,
@@ -94,13 +94,13 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
     try {
       // First, ensure the database exists
       await this.createDatabaseIfNotExists(schema);
-      
+
       // Small delay to ensure database is fully ready
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Then check for missing tables
       const missingTables = await this.checkMissingTables(schema);
-      
+
       if (missingTables.length > 0) {
         this.logger.warn(`⚠️ ${schema.name} missing tables: ${missingTables.join(', ')}`);
         await this.runSchemaMigration(schema);
@@ -109,7 +109,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       }
     } catch (error) {
       this.logger.error(`❌ Error checking ${schema.name}:`, error);
-      
+
       // If we still can't check tables, attempt to run migration anyway
       this.logger.log(`🔄 Attempting to create ${schema.name} schema and tables...`);
       try {
@@ -137,7 +137,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         `;
 
         const existingTables = result.map((row: any) => row.table_name);
-        
+
         for (const expectedTable of schema.expectedTables) {
           if (!existingTables.includes(expectedTable)) {
             missingTables.push(expectedTable);
@@ -146,7 +146,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
 
         this.logger.debug(`${schema.name} - Expected: [${schema.expectedTables.join(', ')}]`);
         this.logger.debug(`${schema.name} - Existing: [${existingTables.join(', ')}]`);
-        
+
         return missingTables;
 
       } catch (error: any) {
@@ -175,12 +175,12 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
 
     const isProduction = process.env.NODE_ENV === 'production';
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     this.logger.log(`🧪 Auto-detecting best migration approach for ${nodeEnv} environment...`);
 
     // Automatically choose the best strategy based on environment and database state
     const migrationSuccess = await this.runIntelligentStrategy(schema, isProduction);
-    
+
     if (!migrationSuccess) {
       throw new Error(`Failed to create schema for ${schema.name}`);
     }
@@ -191,9 +191,9 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
    */
   private async runDbPush(schema: SchemaInfo): Promise<boolean> {
     try {
-      const pushCommand = `npx prisma db push --schema=${schema.schemaPath} --accept-data-loss`;
+      const pushCommand = `npx prisma db push --schema=${schema.schemaPath} --accept-data-loss --skip-generate`;
       this.logger.log(`📦 Executing db push: ${pushCommand}`);
-      
+
       const { stdout, stderr } = await execAsync(pushCommand, {
         cwd: process.cwd(),
         timeout: 120000
@@ -202,7 +202,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       if (stdout) {
         this.logger.log(`✅ DB push output: ${stdout}`);
       }
-      
+
       if (stderr && !stderr.includes('warning')) {
         this.logger.warn(`⚠️ DB push warnings: ${stderr}`);
       }
@@ -251,9 +251,10 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
    */
   private async runMigrateDeploy(schema: SchemaInfo): Promise<boolean> {
     try {
-      this.logger.log(`📦 Executing migration: ${schema.migrateCommand}`);
-      
-      const { stdout, stderr } = await execAsync(schema.migrateCommand, {
+      const migrateCmd = `${schema.migrateCommand} --skip-generate`;
+      this.logger.log(`📦 Executing migration: ${migrateCmd}`);
+
+      const { stdout, stderr } = await execAsync(migrateCmd, {
         cwd: process.cwd(),
         timeout: 120000
       });
@@ -261,7 +262,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       if (stdout) {
         this.logger.log(`✅ Migration output: ${stdout}`);
       }
-      
+
       if (stderr && !stderr.includes('warning')) {
         this.logger.warn(`⚠️ Migration warnings: ${stderr}`);
       }
@@ -312,9 +313,9 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
     if (!isProduction && (databaseState === 'fresh' || databaseState === 'empty' || databaseState === 'corrupted')) {
       this.logger.log(`🔄 Development environment: attempting force reset as final fallback...`);
       try {
-        const pushCommand = `npx prisma db push --schema=${schema.schemaPath} --accept-data-loss --force-reset`;
+        const pushCommand = `npx prisma db push --schema=${schema.schemaPath} --accept-data-loss --force-reset --skip-generate`;
         this.logger.log(`📦 Executing force reset: ${pushCommand}`);
-        
+
         const { stdout: finalStdout, stderr: finalStderr } = await execAsync(pushCommand, {
           cwd: process.cwd(),
           timeout: 120000
@@ -323,7 +324,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         if (finalStdout) {
           this.logger.log(`✅ Force reset output: ${finalStdout}`);
         }
-        
+
         this.logger.log(`✅ ${schema.name} force reset completed successfully`);
         return true;
 
@@ -332,7 +333,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         return false;
       }
     }
-    
+
     this.logger.error(`❌ No suitable migration strategy found for ${schema.name} in ${isProduction ? 'production' : 'development'} environment`);
     return false;
   }
@@ -344,7 +345,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
     try {
       // Check if database exists at all
       const databaseExists = await this.checkDatabaseExists(schema);
-      
+
       if (!databaseExists) {
         this.logger.debug(`${schema.name}: Database does not exist - state: fresh`);
         return 'fresh';
@@ -354,12 +355,12 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       const missingTables = await this.checkMissingTables(schema);
       const totalExpectedTables = schema.expectedTables.length;
       const existingTablesCount = totalExpectedTables - missingTables.length;
-      
+
       if (existingTablesCount === 0) {
         this.logger.debug(`${schema.name}: Database exists but no tables found - state: empty`);
         return 'empty';
       }
-      
+
       if (missingTables.length === 0) {
         // All expected tables exist, check for Prisma migrations table
         if (await this.checkPrismaMigrationsExist(schema)) {
@@ -370,14 +371,14 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
           return 'empty';
         }
       }
-      
+
       if (existingTablesCount > 0 && missingTables.length > 0) {
         this.logger.debug(`${schema.name}: Partial tables exist (${existingTablesCount}/${totalExpectedTables}) - state: corrupted`);
         return 'corrupted';
       }
-      
+
       return 'unknown';
-      
+
     } catch (error) {
       this.logger.warn(`${schema.name}: Could not analyze database state - assuming fresh:`, error);
       return 'fresh';
@@ -395,7 +396,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         WHERE table_schema = 'public' 
         AND table_name = '_prisma_migrations'
       `;
-      
+
       return Array.isArray(result) && result.length > 0;
     } catch (error) {
       this.logger.debug(`${schema.name}: Could not check Prisma migrations table:`, error);
@@ -472,9 +473,9 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
    */
   private async createDatabasesIfNotExist(): Promise<void> {
     this.logger.log('🏗️ Checking if databases exist...');
-    
+
     const schemas = this.getDatabaseSchemas();
-    
+
     for (const schema of schemas) {
       await this.createDatabaseIfNotExists(schema);
     }
@@ -486,9 +487,9 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
   private async createDatabaseIfNotExists(schema: SchemaInfo): Promise<void> {
     try {
       this.logger.log(`🔍 Checking if ${schema.name} (${schema.databaseName}) exists...`);
-      
+
       const exists = await this.checkDatabaseExists(schema);
-      
+
       if (!exists) {
         this.logger.log(`🏗️ Creating ${schema.name} (${schema.databaseName})...`);
         await this.createDatabase(schema);
@@ -496,7 +497,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
       } else {
         this.logger.log(`✅ ${schema.name} already exists`);
       }
-      
+
     } catch (error) {
       this.logger.error(`❌ Error creating ${schema.name}:`, error);
       // Don't throw here - continue with other databases
@@ -509,7 +510,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
   private async checkDatabaseExists(schema: SchemaInfo): Promise<boolean> {
     const connectionInfo = this.parsePostgresUrl(schema.databaseUrl);
     let client: Client | null = null;
-    
+
     try {
       // Connect to postgres system database to check if target database exists
       client = new Client({
@@ -519,16 +520,16 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         password: connectionInfo.password,
         database: 'postgres' // Connect to system database
       });
-      
+
       await client.connect();
-      
+
       const result = await client.query(
         'SELECT 1 FROM pg_database WHERE datname = $1',
         [schema.databaseName]
       );
-      
+
       return (result.rowCount ?? 0) > 0;
-      
+
     } catch (error) {
       this.logger.error(`Error checking if ${schema.name} exists:`, error);
       return false;
@@ -549,7 +550,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
   private async createDatabase(schema: SchemaInfo): Promise<void> {
     const connectionInfo = this.parsePostgresUrl(schema.databaseUrl);
     let client: Client | null = null;
-    
+
     try {
       // Connect to postgres system database to create target database
       client = new Client({
@@ -559,13 +560,13 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
         password: connectionInfo.password,
         database: 'postgres' // Connect to system database
       });
-      
+
       await client.connect();
-      
+
       // Create database (cannot use parameterized query for database name)
       const sanitizedDbName = schema.databaseName.replace(/[^a-zA-Z0-9_]/g, '');
       await client.query(`CREATE DATABASE "${sanitizedDbName}"`);
-      
+
     } catch (error: any) {
       if (error.code === '42P04') {
         // Database already exists, that's okay
@@ -603,7 +604,7 @@ export class DatabaseSchemaSyncService implements OnApplicationBootstrap {
   private parsePostgresUrl(url: string) {
     try {
       const parsedUrl = new URL(url);
-      
+
       return {
         host: parsedUrl.hostname,
         port: parseInt(parsedUrl.port) || 5432,

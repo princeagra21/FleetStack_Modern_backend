@@ -4,5 +4,17 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true
+  },
+  "watchOptions": {
+    "paths": [
+      "src"
+    ],
+    "ignored": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/prisma/**",
+      "**/generated/**",
+      "**/Logs/**"
+    ]
   }
 }

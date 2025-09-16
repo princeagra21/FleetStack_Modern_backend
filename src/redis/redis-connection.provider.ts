@@ -31,7 +31,7 @@ export class RedisConnectionProvider implements OnModuleInit, OnModuleDestroy {
   private clients: RedisClients;
   private isClusterMode = false;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async onModuleInit() {
     await this.initializeConnections();
@@ -43,7 +43,7 @@ export class RedisConnectionProvider implements OnModuleInit, OnModuleDestroy {
 
   private async initializeConnections() {
     const baseConfig = this.getBaseRedisConfig();
-    
+
     // Check if Redis Cluster is configured
     const clusterNodes = process.env.REDIS_CLUSTER_NODES;
     if (clusterNodes) {
@@ -137,7 +137,7 @@ export class RedisConnectionProvider implements OnModuleInit, OnModuleDestroy {
     return client;
   }
 
-  private createClusterClient(nodes: Array<{host: string, port: number}>, config: RedisConnectionConfig): Redis {
+  private createClusterClient(nodes: Array<{ host: string, port: number }>, config: RedisConnectionConfig): Redis {
     return new Cluster(nodes, {
       redisOptions: {
         password: config.password,
@@ -170,9 +170,14 @@ export class RedisConnectionProvider implements OnModuleInit, OnModuleDestroy {
   private async closeAllConnections() {
     const disconnectionPromises = Object.entries(this.clients).map(async ([name, client]) => {
       try {
-        await client.quit();
+        if (client.status === 'ready') {
+          await client.quit();
+        } else {
+          client.disconnect(false);
+        }
         this.logger.debug(`Redis client ${name} disconnected`);
       } catch (error) {
+        try { client.disconnect(false); } catch { }
         this.logger.error(`Error disconnecting Redis client ${name}:`, error.message);
       }
     });

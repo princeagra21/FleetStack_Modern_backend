@@ -101,7 +101,7 @@ export class AbuseDetectionService implements OnModuleDestroy {
   private recordFailure() {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failureCount >= this.circuitConfig.failureThreshold) {
       this.openCircuit('Failure threshold exceeded');
     }
@@ -125,7 +125,7 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
   private canAttempt(): boolean {
     const now = Date.now();
-    
+
     switch (this.circuitState) {
       case 'CLOSED':
         return true;
@@ -149,8 +149,16 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
     this.shutdownPromise = new Promise(async (resolve) => {
       try {
-        if (this.redis && this.redis.status !== 'end') {
-          await this.redis.quit();
+        if (this.redis) {
+          try {
+            if (this.redis.status === 'ready') {
+              await this.redis.quit();
+            } else {
+              this.redis.disconnect(false);
+            }
+          } catch (e) {
+            try { this.redis.disconnect(false); } catch { }
+          }
         }
         this.logger.log('✅ Abuse Detection Redis shutdown complete');
       } catch (error) {
@@ -239,7 +247,7 @@ export class AbuseDetectionService implements OnModuleDestroy {
     if (!this.canAttempt() || !this.isRedisAvailable) {
       const now = Date.now();
       const memoryRecord = this.memoryRequestFreq.get(ip);
-      
+
       if (!memoryRecord || memoryRecord.expiry <= now) {
         // New or expired record
         this.memoryRequestFreq.set(ip, { count: 1, expiry: now + 1000 }); // 1 second window
@@ -257,19 +265,19 @@ export class AbuseDetectionService implements OnModuleDestroy {
       if (current === 1) {
         await this.redis.expire(key, 1); // 1 second window
       }
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return current;
     } catch (error) {
       this.recordFailure();
       // Fallback to memory tracking
       const now = Date.now();
       const memoryRecord = this.memoryRequestFreq.get(ip);
-      
+
       if (!memoryRecord || memoryRecord.expiry <= now) {
         this.memoryRequestFreq.set(ip, { count: 1, expiry: now + 1000 });
         return 1;
@@ -298,7 +306,7 @@ export class AbuseDetectionService implements OnModuleDestroy {
       /burp/i,
       /zap/i,
     ];
-    
+
     // Also check for completely missing or very short user agents
     if (!userAgent || userAgent.length < 10) {
       return true;
@@ -321,12 +329,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
     try {
       const key = `auth_failures:${ip}`;
       const failures = await this.redis.get(key);
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return parseInt(failures || '0');
     } catch (error) {
       this.recordFailure();
@@ -349,12 +357,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
     try {
       const key = `endpoints:${ip}`;
       const count = await this.redis.scard(key);
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return count;
     } catch (error) {
       this.recordFailure();
@@ -436,12 +444,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
     try {
       const blacklisted = await this.redis.sismember('blacklisted_ips', ip);
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return !!blacklisted;
     } catch (error) {
       this.recordFailure();
@@ -486,7 +494,7 @@ export class AbuseDetectionService implements OnModuleDestroy {
           await this.redis.sadd(`endpoints:${req.ip}`, req.url);
           await this.redis.expire(`endpoints:${req.ip}`, 3600); // 1 hour
         }
-        
+
         // Success - reset circuit if half-open
         if (this.circuitState === 'HALF_OPEN') {
           this.resetCircuit();
@@ -507,19 +515,19 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
   async recordAuthFailure(ip: string): Promise<void> {
     let failures = 1;
-    
+
     // 🚀 SECURITY FALLBACK: Always track auth failures in memory
     const now = Date.now();
     const expiry = now + 3600000; // 1 hour
     const memoryRecord = this.memoryAuthFailures.get(ip);
-    
+
     if (memoryRecord && memoryRecord.expiry > now) {
       memoryRecord.count++;
       failures = memoryRecord.count;
     } else {
       this.memoryAuthFailures.set(ip, { count: 1, expiry });
     }
-    
+
     this.logger.warn(`⚠️ Auth failure recorded for ${ip} (count: ${failures})`);
 
     // Try to also record in Redis if available
@@ -528,12 +536,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
         const key = `auth_failures:${ip}`;
         const redisFailures = await this.redis.incr(key);
         await this.redis.expire(key, 3600); // 1 hour
-        
+
         // Success - reset circuit if half-open and sync with Redis count
         if (this.circuitState === 'HALF_OPEN') {
           this.resetCircuit();
         }
-        
+
         failures = Math.max(failures, redisFailures); // Use higher count
       } catch (error) {
         this.recordFailure();
@@ -563,12 +571,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
       await this.redis.sadd('blacklisted_ips', ip);
       await this.redis.hset('blacklist_reasons', ip, reason);
       await this.redis.hset('blacklist_timestamps', ip, new Date().toISOString());
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       this.logger.error(`🔴 IP ${ip} blacklisted in Redis: ${reason}`);
     } catch (error) {
       this.logger.error(`🚨 SECURITY: Failed to blacklist ${ip} in Redis, but protected in memory: ${error.message}`);
@@ -587,12 +595,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
       await this.redis.srem('blacklisted_ips', ip);
       await this.redis.hdel('blacklist_reasons', ip);
       await this.redis.hdel('blacklist_timestamps', ip);
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       this.logger.log(`IP ${ip} has been removed from blacklist`);
     } catch (error) {
       this.recordFailure();
@@ -609,12 +617,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
     try {
       const records = await this.redis.lrange('suspicious_activity', 0, limit - 1);
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return records.map(record => JSON.parse(record));
     } catch (error) {
       this.recordFailure();
@@ -632,12 +640,12 @@ export class AbuseDetectionService implements OnModuleDestroy {
 
     try {
       const ips = await this.redis.smembers('blacklisted_ips');
-      
+
       // Success - reset circuit if half-open
       if (this.circuitState === 'HALF_OPEN') {
         this.resetCircuit();
       }
-      
+
       return ips;
     } catch (error) {
       this.recordFailure();

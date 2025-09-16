@@ -110,7 +110,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.logger.error('🔴 Redis connection error:', error.message);
     this.isRedisAvailable = false;
     this.recordFailure();
-    
+
     // Don't spam logs with repeated ECONNREFUSED errors
     if (!error.message.includes('ECONNREFUSED')) {
       this.logger.error('Redis error details:', error);
@@ -120,7 +120,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private recordFailure() {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failureCount >= this.circuitBreakerConfig.failureThreshold) {
       this.openCircuit('Failure threshold exceeded');
     }
@@ -144,11 +144,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   private canAttemptOperation(): boolean {
     const now = Date.now();
-    
+
     switch (this.circuitBreakerState) {
       case CircuitBreakerState.CLOSED:
         return true;
-      
+
       case CircuitBreakerState.OPEN:
         if (now >= this.nextAttemptTime) {
           this.circuitBreakerState = CircuitBreakerState.HALF_OPEN;
@@ -156,10 +156,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           return true;
         }
         return false;
-      
+
       case CircuitBreakerState.HALF_OPEN:
         return true;
-      
+
       default:
         return false;
     }
@@ -177,17 +177,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.gracefulShutdownPromise = new Promise(async (resolve) => {
       try {
         this.logger.log('🛑 Starting Redis service shutdown...');
-        
+
         // Set a timeout for shutdown
         const shutdownTimeout = setTimeout(() => {
           this.logger.warn('⚠️ Redis shutdown timeout, forcing close');
           resolve();
         }, 5000);
 
-        if (this.client && this.client.status !== 'end') {
-          await this.client.quit();
+        if (this.client) {
+          try {
+            if (this.client.status === 'ready') {
+              await this.client.quit();
+            } else {
+              this.client.disconnect(false);
+            }
+          } catch {
+            try { this.client.disconnect(false); } catch { }
+          }
         }
-        
+
         clearTimeout(shutdownTimeout);
         this.logger.log('✅ Redis service shutdown complete');
         resolve();
@@ -286,7 +294,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.logger.log('Starting users table sync to Redis...');
-      
+
       // Fetch all users from PostgreSQL
       const users = await this.primaryDb.users.findMany({
         select: {
@@ -324,7 +332,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
 
         await pipeline.exec();
-        
+
         // Create username to uid mapping for faster lookups
         const usernamePipeline = this.client.pipeline();
         for (const user of users) {
@@ -350,10 +358,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       if (this.canAttemptOperation() && this.isRedisAvailable) {
         try {
           // Try Redis cache first
-          const userData = await this.executeRedisOperation(() => 
+          const userData = await this.executeRedisOperation(() =>
             this.client.hgetall(`user:${uid}`)
           );
-          
+
           if (userData && Object.keys(userData).length > 0) {
             // Cache hit - return minimal essential data
             return {
@@ -427,7 +435,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         createdAt: user.created_at?.toISOString(),
         updatedAt: user.updated_at?.toISOString(),
       };
-      
+
       await this.executeRedisOperation(async () => {
         await this.client.hset(`user:${user.uid}`, cacheData);
         await this.client.expire(`user:${user.uid}`, 300); // 5 minutes
@@ -446,7 +454,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // Try Redis lookup first if available
       if (this.canAttemptOperation() && this.isRedisAvailable) {
         try {
-          const uid = await this.executeRedisOperation(() => 
+          const uid = await this.executeRedisOperation(() =>
             this.client.get(`username:${username}`)
           );
           if (uid) {
@@ -536,17 +544,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         createdAt: userData.created_at?.toISOString() || userData.createdAt?.toISOString(),
         updatedAt: userData.updated_at?.toISOString() || userData.updatedAt?.toISOString(),
       };
-      
+
       await this.executeRedisOperation(async () => {
         await this.client.hset(userKey, dataToStore);
         await this.client.expire(userKey, 300); // 🚀 5 minutes TTL for security
-        
+
         // Update username mapping with consistent short TTL
         if (userData.username) {
           await this.client.set(`username:${userData.username}`, uid.toString(), 'EX', 300);
         }
       });
-      
+
       this.logger.debug(`✅ User ${uid} cached securely (no PII, 5min TTL)`);
     } catch (error) {
       this.logger.debug(`Failed to set user ${uid} in Redis:`, error.message);
@@ -566,10 +574,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     try {
       // Get username first to clean up mapping
       const userData = await this.getUserById(uid);
-      
+
       await this.executeRedisOperation(async () => {
         await this.client.del(`user:${uid}`);
-        
+
         if (userData?.username) {
           await this.client.del(`username:${userData.username}`);
         }
@@ -590,12 +598,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const result = await operation();
-      
+
       // Success - reset circuit breaker if it was half-open
       if (this.circuitBreakerState === CircuitBreakerState.HALF_OPEN) {
         this.resetCircuitBreaker();
       }
-      
+
       return result;
     } catch (error) {
       this.handleRedisError(error as Error);
@@ -705,7 +713,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
         const cleanup = () => {
           socket.removeAllListeners();
-          try { socket.destroy(); } catch {}
+          try { socket.destroy(); } catch { }
         };
 
         socket.once('connect', () => {
@@ -785,7 +793,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      return await this.executeRedisOperation(() => 
+      return await this.executeRedisOperation(() =>
         this.client.zadd(key, score, member)
       );
     } catch (error) {
@@ -815,7 +823,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      return await this.executeRedisOperation(() => 
+      return await this.executeRedisOperation(() =>
         this.client.zrange(key, start, stop)
       );
     } catch (error) {
@@ -831,7 +839,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      return await this.executeRedisOperation(() => 
+      return await this.executeRedisOperation(() =>
         this.client.zrem(key, member)
       );
     } catch (error) {
@@ -861,7 +869,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const result = await this.executeRedisOperation(() => 
+      const result = await this.executeRedisOperation(() =>
         this.client.expire(key, seconds)
       );
       return result === 1;
@@ -919,13 +927,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private async scanKeys(pattern: string): Promise<string[]> {
     const keys: string[] = [];
     let cursor = '0';
-    
+
     do {
       const result = await this.client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = result[0];
       keys.push(...result[1]);
     } while (cursor !== '0');
-    
+
     return keys;
   }
 
@@ -940,13 +948,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const keys = await this.scanKeys(pattern);
-      
+
       if (keys.length > 0) {
         // Delete in batches to avoid blocking Redis
         const batchSize = 100;
         for (let i = 0; i < keys.length; i += batchSize) {
           const batch = keys.slice(i, i + batchSize);
-          await this.executeRedisOperation(() => 
+          await this.executeRedisOperation(() =>
             this.client.unlink(...batch) // UNLINK is non-blocking alternative to DEL
           );
         }

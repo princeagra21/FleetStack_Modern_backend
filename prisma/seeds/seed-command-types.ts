@@ -72,11 +72,12 @@ const rows: Row[] = [
 
 export async function seedCommandTypes(prisma: PrismaClient) {
   for (const r of rows) {
-    await prisma.commandType.upsert({
-      where: { name: r.name },
-      update: { des: toStr(r.des) },
-      create: { name: r.name, des: toStr(r.des) },
-    });
+    const existing = await prisma.commandType.findFirst({ where: { name: r.name } });
+    if (existing) {
+      await prisma.commandType.update({ where: { id: existing.id }, data: { des: toStr(r.des) } });
+    } else {
+      await prisma.commandType.create({ data: { name: r.name, des: toStr(r.des) } });
+    }
   }
   console.log("Command types seeded.");
 }

@@ -26,5 +26,12 @@
       "@prisma/address": ["./node_modules/@prisma/address"],
       "@prisma/logs": ["./node_modules/@prisma/logs"]
     }
-  }
+  },
+  "exclude": [
+    "dist",
+    "node_modules",
+    "prisma",
+    "generated",
+    "Logs"
+  ]
 }
