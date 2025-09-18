@@ -1,6 +1,9 @@
-generator client {
+// This is your Prisma schema file for FleetStack_db (Primary Database)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator primary {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "../generated/prisma/primary"
 }
 
 datasource primary {
@@ -8,12 +11,1015 @@ datasource primary {
   url      = env("PRIMARY_DATABASE_URL")
 }
 
-datasource logs {
-  provider = "postgresql"
-  url      = env("LOGS_DATABASE_URL")
+
+enum LoginType {
+  SUPERADMIN
+  ADMIN
+  USER
+  SUBUSER
 }
 
-datasource address {
-  provider = "postgresql"
-  url      = env("ADDRESS_DATABASE_URL")
+enum DistanceUnit {
+  KM
+  MILES
+}
+
+enum DisplayMode {
+  LIGHT
+  DARK
+}
+
+enum TextDirection {
+  RTL
+  LTR
+}
+
+enum DriverVehicleActivity {
+  ASSIGN
+  UNASSIGN
+}
+
+enum CreditActivity {
+  ASSIGN
+  DEDUCT
+  RENEW
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum LoginRefType {
+  USER
+  DRIVER
+}
+
+enum NoteAssociateType {
+  USER
+  VEHICLE
+  DRIVER
+}
+
+enum AssociateType {
+  USER
+  VEHICLE
+  DRIVER
+}
+
+enum UploaderType {
+  USER
+  DRIVER
+}
+
+enum GeocodingData {
+  TWO_DIGIT
+  THREE_DIGIT
+}
+
+enum SmtpType {
+  SSL
+  NONE
+  TLS
+}
+
+enum GeofenceType {
+  POLYGON
+  LINE
+  CIRCLE
+}
+
+enum EventType {
+  IGNITION
+  GEOFENCE
+  REMINDER
+  OVERSPEED
+}
+
+enum RecurrenceType {
+  TIME
+  MILEAGE
+  ENGINE_HOURS
+}
+
+enum NotifyAdvanceUnit {
+  DAYS
+  KM
+  HOURS
+}
+
+enum ReminderStatus {
+  PENDING
+  DUE
+  OVERDUE
+  COMPLETED
+}
+
+enum ReminderAdvanceUnit {
+  DAYS
+  KM
+  HOURS
+}
+
+enum SensorDataType {
+  FLOAT
+  INT
+  BOOL
+  TEXT
+}
+
+enum HttpMethod {
+  GET
+  POST
+}
+
+enum BodyContentType {
+  JSON
+  FORM_URLENCODED
+  XML
+  TEXT
+}
+
+enum DocFor {
+  USER
+  DRIVER
+  VEHICLE
+}
+
+// ---------- Core ----------
+model Users {
+  uid               BigInt   @id @default(autoincrement())
+  login_type        LoginType
+
+  role_id           BigInt?
+  parent_user_id    BigInt?
+  address_id        BigInt?
+
+  name              String
+  email             String   @unique
+  is_email_verified Boolean  @default(false)
+
+  mobile_prefix     String?
+  mobile_number     String?
+
+  profile_url       String?
+  username          String   @unique
+  password_hash     String
+  credits           BigInt   @default(0)
+  mfa_enabled       Boolean  @default(false)
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  deleted_at        DateTime?
+  last_login        DateTime?
+  is_active         Boolean  @default(true)
+
+  // relations
+  parent            Users?   @relation("UserParent", fields: [parent_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  children          Users[]  @relation("UserParent")
+
+  role              Roles?   @relation(fields: [role_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  address           Address? @relation(fields: [address_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  companies         Company[]
+  vehicles_primary  Vehicles[] @relation("VehiclePrimaryUser")
+  vehicles_added    Vehicles[] @relation("VehicleAddedBy")
+  drivers_primary   Drivers[]  @relation("DriverPrimaryUser")
+  drivers_created   Drivers[]  @relation("DriverCreatedBy")
+  smtp_settings     SMTP_Settings[]
+  notes_created     Notes[]    @relation("NoteCreatedBy")
+  geofences_created Geofence[]
+  user_settings     User_Settings?
+  payment_plans     PricingPlan[]
+  user_groups       Vehicle_Groups[]
+  notifications     User_Notification_Settings[]
+  sensors_created   Sensors[]
+  login_logs        Login_Logs[] @relation("LoginLogUser")
+  share_links       Share_Public_Link[]
+  webhooks_added    Webhook[]  @relation("WebhookAddedBy")
+  credits_logs      Credits_Logs[] @relation("CreditAdmin")
+  files_associated  Files[]   @relation("FileAssocUser")
+  files_uploaded    Files[]   @relation("FileUploadedByUser")
+  user_vehicle_assigns User_Vehicle_Assign[]
+  driver_user_links Driver_User[]
+  driver_vehicle_logs  Driver_Vehicle_History[]
+  notes_assoc       Notes[]   @relation("NoteAssocUser")
+
+  @@index([login_type])
+  @@index([role_id])
+  @@index([parent_user_id])
+  @@index([address_id])
+  @@index([is_active])
+  @@map("users")
+}
+
+model Address {
+  id             BigInt  @id @default(autoincrement())
+  country_code   String
+  state_code     String
+  city_id        String
+  address_line   String
+  pincode        String
+  full_address   String
+
+  users          Users[]
+  drivers        Drivers[]
+
+  @@index([country_code])
+  @@index([state_code])
+  @@index([city_id])
+  @@index([pincode])
+  @@map("addresses")
+}
+
+model Company {
+  id              BigInt @id @default(autoincrement())
+  user_id         BigInt
+
+  name            String
+  website_url     String?
+  custom_domain   String?
+  logo_light_url  String?
+  logo_dark_url   String?
+  favicon_url     String?
+  social_links    Json?
+  primary_color   String?
+  secondary_color String?
+  navbar_color    String?
+
+  user            Users  @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@map("companies")
+}
+
+// ---------- Roles & Permissions ----------
+model Roles {
+  id               BigInt  @id @default(autoincrement())
+  name             String  @unique
+  description      String?
+  parent_role_id   BigInt?
+
+  parent           Roles?  @relation("RoleParent", fields: [parent_role_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  children         Roles[] @relation("RoleParent")
+
+  users            Users[]
+  role_permissions Role_Permission[]
+
+  @@index([parent_role_id])
+  @@map("roles")
+}
+
+model Permission_Group {
+  id           BigInt @id @default(autoincrement())
+  name         String @unique
+  permissions  Permissions[]
+
+  @@map("permission_groups")
+}
+
+model Permissions {
+  id               BigInt @id @default(autoincrement())
+  group_id         BigInt
+  name             String
+  slug             String @unique
+
+  group            Permission_Group @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role_permissions Role_Permission[]
+
+  @@index([group_id])
+  @@map("permissions")
+}
+
+model Role_Permission {
+  id             BigInt      @id @default(autoincrement())
+  role_id        BigInt
+  permission_id  BigInt
+
+  role        Roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission  Permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([role_id, permission_id])
+  @@index([role_id])
+  @@index([permission_id])
+  @@map("role_permissions")
+}
+
+// ---------- Devices / Sims ----------
+model Device_Type {
+  id               BigInt  @id @default(autoincrement())
+  name             String
+  port             Int
+  manufacturer     String?
+  protocol         String?
+  firmware_version String?
+
+  devices          Devices[]
+  custom_commands Custom_Commands[]
+
+  @@map("device_types")
+}
+
+model Sim_provider {
+  id            BigInt @id @default(autoincrement())
+  name          String
+  country_code  String
+  apn_name      String?
+  apn_user      String?
+  apn_password  String?
+
+  sims          Sims[]
+
+  @@index([country_code])
+  @@map("sim_provider")
+}
+
+model Sims {
+  id           BigInt  @id @default(autoincrement())
+  sim_number   BigInt  @unique
+  imsi         BigInt?
+  provider_id  BigInt?
+  iccid        String?
+  status       Boolean @default(true)
+
+  provider     Sim_provider? @relation(fields: [provider_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  devices      Devices[]
+
+  @@index([provider_id])
+  @@map("sims")
+}
+
+model Devices {
+  id            BigInt      @id @default(autoincrement())
+  imei          String      @unique
+  sim_id        BigInt?
+  device_type_id BigInt?
+  created_at    DateTime    @default(now())
+
+  sim           Sims?        @relation(fields: [sim_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  type          Device_Type? @relation(fields: [device_type_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  vehicles      Vehicles[]
+ 
+
+  @@index([sim_id])
+  @@index([device_type_id])
+  @@map("devices")
+}
+
+// ---------- Vehicles ----------
+model VehicleType {
+  id       BigInt   @id @default(autoincrement())
+  name     String   @unique
+  slug     String   @unique
+  vehicles Vehicles[]
+
+  @@map("vehicletype")
+}
+
+model PricingPlan {
+  id             BigInt   @id @default(autoincrement())
+  admin_user_id  BigInt
+  name           String
+  duration_days  Int
+  price          Float
+  currency       String
+  features       Json?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  is_active      Boolean  @default(true)
+
+  admin          Users     @relation(fields: [admin_user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicles       Vehicles[]
+  payments       Payments[]
+
+  @@index([admin_user_id])
+  @@map("pricing_plan")
+}
+
+model Vehicles {
+  id                BigInt   @id @default(autoincrement())
+  name              String
+  vin               String?
+  plate_number      String?
+  device_id         BigInt?
+  vehicle_type_id   BigInt?
+  primary_user_id   BigInt?
+  added_by_user_id  BigInt?
+  created_at        DateTime @default(now())
+  primary_expiry    DateTime?
+  secondary_expiry  DateTime?
+  plan_id           BigInt?
+  lat               Float?
+  lon               Float?
+  previous_lat      Float?
+  previous_lon      Float?
+  ignition          Boolean  @default(false)
+  speed             Float?
+  engine_hours      Float?
+  odometer          Float?
+  attributes        Json?
+  vehicle_meta      Json?
+  gmt_offset        String?
+  last_update       DateTime?
+  is_active         Boolean  @default(true)
+  deleted_at        DateTime?
+
+  device            Devices?     @relation(fields: [device_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  vehicle_type      VehicleType? @relation(fields: [vehicle_type_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user_primary      Users?       @relation("VehiclePrimaryUser", fields: [primary_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  user_added_by     Users?       @relation("VehicleAddedBy", fields: [added_by_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  plan              PricingPlan? @relation(fields: [plan_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  assignments       User_Vehicle_Assign[]
+  driver_vehicle    Driver_Vehicle?
+  driver_history    Driver_Vehicle_History[]
+  payments          Payments[]
+  reminders         Vehicle_Reminder[]
+  geofence_settings Vehicle_Geofence_Settings[]
+  group_links       User_Vehicle_Group[]
+  sensors           Sensors[]
+  sharelinks        Sharelink_Vehicle[]
+  files             Files[]      @relation("FileAssocVehicle")
+  credits_logs      Credits_Logs[]
+  notes_assoc       Notes[]      @relation("NoteAssocVehicle")
+
+  @@index([device_id])
+  @@index([vehicle_type_id])
+  @@index([primary_user_id])
+  @@index([added_by_user_id])
+  @@index([plan_id])
+  @@index([is_active])
+  @@map("vehicles")
+}
+
+model User_Vehicle_Assign {
+  id         BigInt @id @default(autoincrement())
+  user_id    BigInt
+  vehicle_id BigInt
+
+  user       Users    @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicle    Vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([user_id, vehicle_id])
+  @@index([user_id])
+  @@index([vehicle_id])
+  @@map("user_vehicle_assign")
+}
+
+// ---------- Drivers ----------
+model Drivers {
+  id                BigInt   @id @default(autoincrement())
+  name              String
+  mobile_code       String?
+  mobile            String?
+  email             String?  @unique
+  is_verified       Boolean  @default(false)
+  address_id        BigInt?
+  primary_user_id   BigInt?
+  created_by_user_id BigInt?
+  profile_url       String?
+  username          String   @unique
+  password_hash     String
+  is_active         Boolean  @default(true)
+  last_login        DateTime?
+  created_at        DateTime @default(now())
+  attributes        Json?
+  deleted_at        DateTime?
+
+  address           Address? @relation(fields: [address_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user_primary      Users?   @relation("DriverPrimaryUser", fields: [primary_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  user_created      Users?   @relation("DriverCreatedBy", fields: [created_by_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+
+  driver_user_links Driver_User[]
+  driver_vehicle    Driver_Vehicle?
+  history           Driver_Vehicle_History[]
+  files             Files[] @relation("FileAssocDriver")
+  uploaded_files    Files[] @relation("FileUploadedByDriver")
+  login_logs        Login_Logs[] @relation("LoginLogDriver")
+  notes_assoc       Notes[]  @relation("NoteAssocDriver")
+
+  @@index([address_id])
+  @@index([primary_user_id])
+  @@index([created_by_user_id])
+  @@index([is_active])
+  @@map("drivers")
+}
+
+model Driver_User {
+  id        BigInt @id @default(autoincrement())
+  driver_id BigInt
+  user_id   BigInt
+
+  driver    Drivers @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      Users   @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([driver_id, user_id])
+  @@index([driver_id])
+  @@index([user_id])
+  @@map("driver_user")
+}
+
+model Driver_Vehicle {
+  id         BigInt   @id @default(autoincrement())
+  driver_id  BigInt   @unique
+  vehicle_id BigInt   @unique
+
+  driver     Drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle    Vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([vehicle_id])
+  @@map("driver_vehicle")
+}
+
+model Driver_Vehicle_History {
+  id         BigInt               @id @default(autoincrement())
+  vehicle_id BigInt
+  driver_id  BigInt
+  activity   DriverVehicleActivity
+  created_at DateTime             @default(now())
+  by_user_id BigInt?
+
+  vehicle    Vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver     Drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       Users?   @relation(fields: [by_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([vehicle_id])
+  @@index([driver_id])
+  @@index([by_user_id])
+  @@map("driver_vehicle_history")
+}
+
+// ---------- Settings / Config ----------
+model User_Settings {
+  id             BigInt        @id @default(autoincrement())
+  user_id        BigInt  @unique
+  date_format    String?
+  language_code  String?
+  distance_unit  DistanceUnit  @default(KM)
+  mode           DisplayMode   @default(LIGHT)
+  direction      TextDirection @default(LTR)
+
+  user           Users @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@map("user_settings")
+}
+
+model Software_Config {
+  id             BigInt        @id @default(autoincrement())
+  geocoding_data GeocodingData @default(TWO_DIGIT)
+  sso_url        String?
+  backup_days    Int?
+  openai_api_key String?
+  currency_code  String
+
+  @@map("software_config")
+}
+
+model SMTP_Settings {
+  id           BigInt   @id @default(autoincrement())
+  user_id      BigInt
+  sender_name  String
+  host         String
+  port         Int
+  email        String
+  type         SmtpType @default(NONE)
+  username     String
+  password     String
+  reply_to     String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  is_active    Boolean  @default(true)
+
+  user         Users    @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@map("smtp_settings")
+}
+
+// ---------- Documents / Files ----------
+model Document_Type {
+  id      BigInt  @id @default(autoincrement())
+  name    String  @unique
+  doc_for DocFor
+
+  files   Files[]
+
+  @@map("document_type")
+}
+
+model Files {
+  id                     BigInt        @id @default(autoincrement())
+  file_name              String
+  doc_type_id            BigInt
+  description            String?
+  associate_type         AssociateType
+  associate_user_id      BigInt?
+  associate_driver_id    BigInt?
+  associate_vehicle_id   BigInt?
+  uploaded_by_type       UploaderType
+  uploaded_by_user_id    BigInt?
+  uploaded_by_driver_id  BigInt?
+  file_type              String?
+  file_path              String
+  created_at             DateTime      @default(now())
+  deleted_at             DateTime?
+  expiry_at              DateTime?
+  updated_at             DateTime      @updatedAt
+  is_visible             Boolean       @default(true)
+  is_visible_driver      Boolean       @default(false)
+
+  doc_type    Document_Type @relation(fields: [doc_type_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assoc_user  Users?        @relation("FileAssocUser", fields: [associate_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  assoc_driver Drivers?     @relation("FileAssocDriver", fields: [associate_driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  assoc_vehicle Vehicles?   @relation("FileAssocVehicle", fields: [associate_vehicle_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  up_user     Users?        @relation("FileUploadedByUser", fields: [uploaded_by_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  up_driver   Drivers?      @relation("FileUploadedByDriver", fields: [uploaded_by_driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([doc_type_id])
+  @@index([associate_user_id])
+  @@index([associate_driver_id])
+  @@index([associate_vehicle_id])
+  @@index([uploaded_by_user_id])
+  @@index([uploaded_by_driver_id])
+  @@map("files")
+}
+
+// ---------- Credits / Payments ----------
+model Credits_Logs {
+  id            BigInt        @id @default(autoincrement())
+  admin_user_id BigInt
+  credits       Int
+  activity      CreditActivity
+  vehicle_id    BigInt?
+  created_at    DateTime      @default(now())
+
+  admin         Users    @relation("CreditAdmin", fields: [admin_user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicle       Vehicles? @relation(fields: [vehicle_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([admin_user_id])
+  @@index([vehicle_id])
+  @@map("credits_logs")
+}
+
+model Payments {
+  id              BigInt        @id @default(autoincrement())
+  vehicle_id      BigInt
+  plan_id         BigInt
+  amount          Float
+  method          String
+  remark          String?
+  status          PaymentStatus @default(PENDING)
+  transaction_ref String        @unique
+  created_at      DateTime      @default(now())
+
+  vehicle Vehicles    @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  plan    PricingPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([vehicle_id])
+  @@index([plan_id])
+  @@index([status])
+  @@map("payments")
+}
+
+// ---------- Templates / Logs / Notes ----------
+model EmailTemplates {
+  id             BigInt   @id @default(autoincrement())
+  type           String
+  title          String
+  slug           String   @unique
+  language_code  String
+  email_subject  String
+  message        String
+  is_active      Boolean  @default(true)
+
+  @@index([slug])
+  @@index([language_code])
+  @@map("email_templates")
+}
+
+model Login_Logs {
+  id        BigInt      @id @default(autoincrement())
+  ref_type  LoginRefType
+  user_id   BigInt?
+  driver_id BigInt?
+  ip        String?
+  browser   String?
+  platform  String?
+  header    Json?
+
+  user      Users?   @relation("LoginLogUser", fields: [user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  driver    Drivers? @relation("LoginLogDriver", fields: [driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@index([driver_id])
+  @@map("login_logs")
+}
+
+model Notes {
+  id                    BigInt            @id @default(autoincrement())
+  title                 String
+  note                  String
+  type                  NoteAssociateType
+  associate_user_id     BigInt?
+  associate_vehicle_id  BigInt?
+  associate_driver_id   BigInt?
+  created_by_user_id    BigInt
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+
+  assoc_user     Users?    @relation("NoteAssocUser", fields: [associate_user_id], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  assoc_vehicle  Vehicles? @relation("NoteAssocVehicle", fields: [associate_vehicle_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  assoc_driver   Drivers?  @relation("NoteAssocDriver", fields: [associate_driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  created_by     Users     @relation("NoteCreatedBy", fields: [created_by_user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([type])
+  @@index([associate_user_id])
+  @@index([associate_vehicle_id])
+  @@index([associate_driver_id])
+  @@index([created_by_user_id])
+  @@map("notes")
+}
+
+// ---------- Public Share Links ----------
+model Share_Public_Link {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt
+  unique_code String   @unique
+  created_at  DateTime @default(now())
+  expiry_at   DateTime?
+  is_geofence Boolean  @default(false)
+  is_history  Boolean  @default(false)
+  is_active   Boolean  @default(true)
+
+  user        Users     @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicles    Sharelink_Vehicle[]
+
+  @@index([user_id])
+  @@index([unique_code])
+  @@index([is_active])
+  @@map("share_public_link")
+}
+
+model Sharelink_Vehicle {
+  id            BigInt  @id @default(autoincrement())
+  sharelink_id  BigInt
+  vehicle_id    BigInt
+
+  sharelink     Share_Public_Link @relation(fields: [sharelink_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle       Vehicles          @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([sharelink_id, vehicle_id])
+  @@index([sharelink_id])
+  @@index([vehicle_id])
+  @@map("sharelink_vehicle")
+}
+
+// ---------- Commands ----------
+model CommandType {
+  id              BigInt @id @default(autoincrement())
+  name            String @unique
+  des             String?
+
+  custom_commands Custom_Commands[]
+
+  @@map("command_type")
+}
+
+model Custom_Commands {
+  id               BigInt  @id @default(autoincrement())
+  device_id        BigInt
+  command_type_id  BigInt
+  command          String
+  is_active        Boolean @default(true)
+
+  device        Device_Type      @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  command_type  CommandType  @relation(fields: [command_type_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([device_id])
+  @@index([command_type_id])
+  @@map("custom_commands")
+}
+
+model Custom_System_Variable {
+  id             BigInt   @id @default(autoincrement())
+  name           String   @unique
+  initial_value  String 
+
+  @@index([name])
+  @@map("custom_system_variables")
+}
+
+// ---------- Geofences ----------
+model Geofence {
+  id            BigInt      @id @default(autoincrement())
+  name          String
+  des           String?
+  type          GeofenceType
+  color         String?
+  geodata       Json
+  is_active     Boolean     @default(true)
+  created_by    BigInt
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  user          Users       @relation(fields: [created_by], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicle_links Vehicle_Geofence_Settings[]
+
+  @@index([created_by])
+  @@index([is_active])
+  @@map("geofence")
+}
+
+model Vehicle_Geofence_Settings {
+  id                       BigInt   @id @default(autoincrement())
+  vehicle_id               BigInt
+  geofence_id              BigInt
+  entry_notify             Boolean  @default(false)
+  exit_notify              Boolean  @default(false)
+  inside_stay_minutes      Int?
+  notify_inside            Boolean  @default(false)
+  outside_stay_minutes     Int?
+  notify_outside           Boolean  @default(false)
+  entry_execute_command    Boolean  @default(false)
+  exit_execute_command     Boolean  @default(false)
+  entry_command            String?
+  exit_command             String?
+  is_active                Boolean  @default(true)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  last_notified_at         DateTime?
+
+  vehicle   Vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  geofence  Geofence @relation(fields: [geofence_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([vehicle_id, geofence_id])
+  @@index([vehicle_id])
+  @@index([geofence_id])
+  @@index([is_active])
+  @@map("vehicle_geofence_settings")
+}
+
+// ---------- Vehicle Groups ----------
+model Vehicle_Groups {
+  id        BigInt  @id @default(autoincrement())
+  user_id   BigInt
+  name      String
+  color     String?
+
+  user      Users             @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  vehicles  User_Vehicle_Group[]
+
+  @@index([user_id])
+  @@map("vehicle_groups")
+}
+
+model User_Vehicle_Group {
+  id          BigInt   @id @default(autoincrement())
+  vehicle_id  BigInt
+  group_id    BigInt
+  created_at  DateTime @default(now())
+
+  vehicle   Vehicles       @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group     Vehicle_Groups @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([vehicle_id, group_id])
+  @@index([vehicle_id])
+  @@index([group_id])
+  @@map("user_vehicle_group")
+}
+
+// ---------- Notifications ----------
+model User_Notification_Settings {
+  id                 BigInt    @id @default(autoincrement())
+  user_id            BigInt
+  event_type         EventType
+  notify_email       Boolean   @default(false)
+  notify_whatsapp    Boolean   @default(false)
+  notify_web_push    Boolean   @default(false)
+  notify_mobile_push Boolean   @default(false)
+  notify_telegram    Boolean   @default(false)
+  notify_sms         Boolean   @default(false)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  user Users @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([user_id, event_type])
+  @@index([user_id])
+  @@map("user_notification_settings")
+}
+
+// ---------- Reminders ----------
+model Vehicle_Reminder_Types {
+  id                   BigInt            @id @default(autoincrement())
+  name                 String
+  des                  String?
+  recurrence_type      RecurrenceType
+  recurrence_interval  BigInt
+  notify_advance_value BigInt
+  notify_advance_unit  NotifyAdvanceUnit
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+  is_active            Boolean           @default(true)
+
+  reminders            Vehicle_Reminder[]
+
+  @@index([recurrence_type])
+   @@index([notify_advance_unit])
+  @@index([is_active])
+  @@map("vehicle_reminder_types")
+}
+
+model Vehicle_Reminder {
+  id                       BigInt             @id @default(autoincrement())
+  vehicle_id               BigInt
+  reminder_type_id         BigInt
+  note                     String?
+  last_done_date           DateTime?
+  last_done_km             Int?
+  last_done_engine_hours   Int?
+  next_due_date            DateTime?
+  next_due_km              Int?
+  next_due_engine_hours    Int?
+  notify_trigger_value     Int?
+  recurrence_interval_text String?
+  notify_advance_value     Int?
+  notify_advance_unit      ReminderAdvanceUnit
+  status                   ReminderStatus      @default(PENDING)
+  is_active                Boolean             @default(true)
+  created_at               DateTime            @default(now())
+  updated_at               DateTime            @updatedAt
+
+  vehicle      Vehicles               @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reminderType Vehicle_Reminder_Types @relation(fields: [reminder_type_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([vehicle_id])
+  @@index([reminder_type_id])
+  @@index([status])
+  @@index([is_active])
+  @@map("vehicle_reminder")
+}
+
+// ---------- Sensors ----------
+model Sensors {
+  id            BigInt        @id @default(autoincrement())
+  vehicle_id    BigInt
+  name          String
+  icon          String?
+  unit          String?
+  raw_attribute String
+  custom_js     String?
+  data_type     SensorDataType
+  description   String?
+  created_by    BigInt
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  vehicle Vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user    Users    @relation(fields: [created_by], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([vehicle_id])
+  @@index([created_by])
+  @@map("sensors")
+}
+
+// ---------- Webhooks ----------
+model Webhook_Events_Type {
+  id               BigInt   @id @default(autoincrement())
+  event_slug       String   @unique
+  name             String
+  variables_schema Json
+  is_active        Boolean  @default(true)
+
+  webhooks         Webhook[]
+
+  @@index([event_slug])
+  @@index([is_active])
+  @@map("webhook_events_type")
+}
+
+model Webhook {
+  id                 BigInt          @id @default(autoincrement())
+  event_type_id      BigInt
+  added_by_user_id   BigInt
+  name               String
+  method             HttpMethod
+  host_url           String
+  headers            Json?
+  body_content_type  BodyContentType
+  body_content       Json?
+  is_active          Boolean         @default(true)
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  event_type Webhook_Events_Type @relation(fields: [event_type_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  added_by   Users               @relation("WebhookAddedBy", fields: [added_by_user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([event_type_id])
+  @@index([added_by_user_id])
+  @@index([is_active])
+  @@map("webhook")
 }

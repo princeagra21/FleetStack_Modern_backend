@@ -1,0 +1,274 @@
+// This is your Prisma schema file for FleetStack_address (Address Database)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator address {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/address"
+}
+
+datasource address {
+  provider = "postgresql"
+  url      = env("ADDRESS_DATABASE_URL")
+}
+
+// ---------- Address Database Models ----------
+
+// Countries master data
+model Countries {
+  id           BigInt  @id @default(autoincrement())
+  name         String
+  iso2_code    String  @unique
+  iso3_code    String  @unique
+  phone_code   String?
+  currency     String?
+  timezone     String?
+  flag_url     String?
+  is_active    Boolean @default(true)
+
+  states       States[]
+
+  @@index([iso2_code])
+  @@index([iso3_code])
+  @@index([is_active])
+  @@map("countries")
+}
+
+// States/Provinces master data
+model States {
+  id           BigInt  @id @default(autoincrement())
+  country_id   BigInt
+  name         String
+  state_code   String
+  timezone     String?
+  is_active    Boolean @default(true)
+
+  country      Countries @relation(fields: [country_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cities       Cities[]
+
+  @@unique([country_id, state_code])
+  @@index([country_id])
+  @@index([state_code])
+  @@index([is_active])
+  @@map("states")
+}
+
+// Cities master data
+model Cities {
+  id         BigInt  @id @default(autoincrement())
+  state_id   BigInt
+  name       String
+  city_code  String?
+  lat        Float?
+  lon        Float?
+  timezone   String?
+  is_active  Boolean @default(true)
+
+  state      States @relation(fields: [state_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  areas      Areas[]
+
+  @@unique([state_id, name])
+  @@index([state_id])
+  @@index([city_code])
+  @@index([lat, lon])
+  @@index([is_active])
+  @@map("cities")
+}
+
+// Areas/Districts within cities
+model Areas {
+  id         BigInt  @id @default(autoincrement())
+  city_id    BigInt
+  name       String
+  area_code  String?
+  pincode    String?
+  lat        Float?
+  lon        Float?
+  is_active  Boolean @default(true)
+
+  city       Cities @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([city_id, name])
+  @@index([city_id])
+  @@index([pincode])
+  @@index([lat, lon])
+  @@index([is_active])
+  @@map("areas")
+}
+
+// Geocoding cache for addresses
+model Geocoding_Cache {
+  id            BigInt   @id @default(autoincrement())
+  address_text  String   @unique
+  formatted_address String?
+  lat           Float?
+  lon           Float?
+  country       String?
+  state         String?
+  city          String?
+  area          String?
+  pincode       String?
+  place_id      String?
+  accuracy      String?
+  geocoded_at   DateTime @default(now())
+  expires_at    DateTime?
+  is_valid      Boolean  @default(true)
+
+  @@index([lat, lon])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([pincode])
+  @@index([geocoded_at])
+  @@index([is_valid])
+  @@map("geocoding_cache")
+}
+
+// Reverse geocoding cache for coordinates
+model Reverse_Geocoding_Cache {
+  id                BigInt   @id @default(autoincrement())
+  lat               Float
+  lon               Float
+  formatted_address String?
+  country           String?
+  state             String?
+  city              String?
+  area              String?
+  street            String?
+  pincode           String?
+  place_id          String?
+  accuracy_radius   Int?
+  geocoded_at       DateTime @default(now())
+  expires_at        DateTime?
+  is_valid          Boolean  @default(true)
+
+  @@unique([lat, lon])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([pincode])
+  @@index([geocoded_at])
+  @@index([is_valid])
+  @@map("reverse_geocoding_cache")
+}
+
+// Points of Interest (POI) data
+model Points_Of_Interest {
+  id          BigInt  @id @default(autoincrement())
+  name        String
+  category    String
+  subcategory String?
+  lat         Float
+  lon         Float
+  address     String?
+  phone       String?
+  website     String?
+  rating      Float?
+  place_id    String?
+  country     String?
+  state       String?
+  city        String?
+  is_active   Boolean @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([category])
+  @@index([subcategory])
+  @@index([lat, lon])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([is_active])
+  @@map("points_of_interest")
+}
+
+// Road network data for routing
+model Road_Network {
+  id           BigInt  @id @default(autoincrement())
+  segment_id   String  @unique
+  start_lat    Float
+  start_lon    Float
+  end_lat      Float
+  end_lon      Float
+  road_type    String
+  road_name    String?
+  speed_limit  Int?
+  distance     Float
+  travel_time  Int?
+  toll_road    Boolean @default(false)
+  one_way      Boolean @default(false)
+  geometry     Json?
+  country      String?
+  state        String?
+  city         String?
+  is_active    Boolean @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([start_lat, start_lon])
+  @@index([end_lat, end_lon])
+  @@index([road_type])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([is_active])
+  @@map("road_network")
+}
+
+// Traffic data and patterns
+model Traffic_Data {
+  id            BigInt   @id @default(autoincrement())
+  segment_id    String
+  traffic_level String
+  speed_kmph    Float?
+  delay_minutes Int?
+  congestion    Float?
+  incidents     Json?
+  weather       String?
+  timestamp     DateTime
+  created_at    DateTime @default(now())
+
+  @@index([segment_id])
+  @@index([traffic_level])
+  @@index([timestamp])
+  @@index([created_at])
+  @@map("traffic_data")
+}
+
+// Address validation rules by region
+model Address_Validation_Rules {
+  id              BigInt  @id @default(autoincrement())
+  country_code    String
+  state_code      String?
+  city_name       String?
+  pincode_pattern String?
+  address_format  String?
+  required_fields Json?
+  validation_api  String?
+  is_active       Boolean @default(true)
+
+  @@unique([country_code, state_code, city_name])
+  @@index([country_code])
+  @@index([state_code])
+  @@index([is_active])
+  @@map("address_validation_rules")
+}
+
+// Timezone mapping for coordinates
+model Timezone_Mapping {
+  id           BigInt  @id @default(autoincrement())
+  country_code String
+  state_code   String?
+  city_name    String?
+  timezone     String
+  utc_offset   String
+  dst_offset   String?
+  bounds       Json?
+  is_active    Boolean @default(true)
+
+  @@unique([country_code, state_code, city_name])
+  @@index([country_code])
+  @@index([state_code])
+  @@index([timezone])
+  @@index([is_active])
+  @@map("timezone_mapping")
+}

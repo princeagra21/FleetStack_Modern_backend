@@ -1,0 +1,275 @@
+// This is your Prisma schema file for FleetStack_logs (Logs Database)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator logs {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/logs"
+}
+
+datasource logs {
+  provider = "postgresql"
+  url      = env("LOGS_DATABASE_URL")
+}
+
+// ---------- Logs Database Models ----------
+
+// Vehicle tracking and position logs
+model Vehicle_Position_Logs {
+  id              BigInt   @id @default(autoincrement())
+  vehicle_id      BigInt
+  device_imei     String?
+  lat             Float?
+  lon             Float?
+  altitude        Float?
+  speed           Float?
+  course          Float?
+  satellites      Int?
+  ignition        Boolean  @default(false)
+  engine_hours    Float?
+  odometer        Float?
+  fuel_level      Float?
+  battery_level   Float?
+  gsm_signal      Int?
+  gps_signal      Int?
+  attributes      Json?
+  raw_data        String?
+  server_time     DateTime @default(now())
+  device_time     DateTime?
+  created_at      DateTime @default(now())
+
+  @@index([vehicle_id])
+  @@index([device_imei])
+  @@index([server_time])
+  @@index([device_time])
+  @@index([ignition])
+  @@map("vehicle_position_logs")
+}
+
+// System activity logs
+model System_Activity_Logs {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt?
+  driver_id   BigInt?
+  action      String
+  module      String
+  description String?
+  ip_address  String?
+  user_agent  String?
+  request_id  String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  @@index([user_id])
+  @@index([driver_id])
+  @@index([action])
+  @@index([module])
+  @@index([created_at])
+  @@map("system_activity_logs")
+}
+
+// Error and exception logs
+model Error_Logs {
+  id           BigInt   @id @default(autoincrement())
+  error_type   String
+  error_code   String?
+  message      String
+  stack_trace  String?
+  user_id      BigInt?
+  request_id   String?
+  endpoint     String?
+  method       String?
+  ip_address   String?
+  user_agent   String?
+  metadata     Json?
+  resolved     Boolean  @default(false)
+  resolved_at  DateTime?
+  resolved_by  BigInt?
+  created_at   DateTime @default(now())
+
+  @@index([error_type])
+  @@index([error_code])
+  @@index([user_id])
+  @@index([resolved])
+  @@index([created_at])
+  @@map("error_logs")
+}
+
+// API request logs
+model API_Request_Logs {
+  id             BigInt   @id @default(autoincrement())
+  request_id     String   @unique
+  user_id        BigInt?
+  method         String
+  endpoint       String
+  status_code    Int
+  response_time  Int
+  request_size   Int?
+  response_size  Int?
+  ip_address     String?
+  user_agent     String?
+  request_body   String?
+  response_body  String?
+  headers        Json?
+  created_at     DateTime @default(now())
+
+  @@index([user_id])
+  @@index([method])
+  @@index([endpoint])
+  @@index([status_code])
+  @@index([created_at])
+  @@map("api_request_logs")
+}
+
+// Notification logs
+model Notification_Logs {
+  id            BigInt   @id @default(autoincrement())
+  user_id       BigInt?
+  driver_id     BigInt?
+  vehicle_id    BigInt?
+  type          String
+  channel       String
+  recipient     String
+  subject       String?
+  message       String
+  status        String
+  error_message String?
+  sent_at       DateTime?
+  delivered_at  DateTime?
+  read_at       DateTime?
+  metadata      Json?
+  created_at    DateTime @default(now())
+
+  @@index([user_id])
+  @@index([driver_id])
+  @@index([vehicle_id])
+  @@index([type])
+  @@index([channel])
+  @@index([status])
+  @@index([created_at])
+  @@map("notification_logs")
+}
+
+// Command execution logs
+model Command_Execution_Logs {
+  id               BigInt   @id @default(autoincrement())
+  vehicle_id       BigInt?
+  device_id        BigInt?
+  command_type     String
+  command_data     String
+  executed_by      BigInt?
+  status           String
+  response         String?
+  error_message    String?
+  execution_time   Int?
+  sent_at          DateTime
+  acknowledged_at  DateTime?
+  completed_at     DateTime?
+  created_at       DateTime @default(now())
+
+  @@index([vehicle_id])
+  @@index([device_id])
+  @@index([command_type])
+  @@index([executed_by])
+  @@index([status])
+  @@index([created_at])
+  @@map("command_execution_logs")
+}
+
+// Geofence event logs
+model Geofence_Event_Logs {
+  id           BigInt   @id @default(autoincrement())
+  vehicle_id   BigInt
+  geofence_id  BigInt
+  event_type   String
+  lat          Float?
+  lon          Float?
+  speed        Float?
+  address      String?
+  duration     Int?
+  notified     Boolean  @default(false)
+  metadata     Json?
+  event_time   DateTime
+  created_at   DateTime @default(now())
+
+  @@index([vehicle_id])
+  @@index([geofence_id])
+  @@index([event_type])
+  @@index([event_time])
+  @@index([notified])
+  @@map("geofence_event_logs")
+}
+
+// Data export logs
+model Data_Export_Logs {
+  id            BigInt   @id @default(autoincrement())
+  user_id       BigInt
+  export_type   String
+  file_format   String
+  file_path     String?
+  file_size     BigInt?
+  filters       Json?
+  status        String
+  progress      Int      @default(0)
+  error_message String?
+  started_at    DateTime @default(now())
+  completed_at  DateTime?
+  expires_at    DateTime?
+
+  @@index([user_id])
+  @@index([export_type])
+  @@index([status])
+  @@index([started_at])
+  @@map("data_export_logs")
+}
+
+// Webhook delivery logs
+model Webhook_Delivery_Logs {
+  id              BigInt   @id @default(autoincrement())
+  webhook_id      BigInt
+  event_type      String
+  payload         Json
+  delivery_url    String
+  http_method     String
+  headers         Json?
+  status_code     Int?
+  response_body   String?
+  response_time   Int?
+  attempt_count   Int      @default(1)
+  max_attempts    Int      @default(3)
+  next_retry_at   DateTime?
+  delivered       Boolean  @default(false)
+  error_message   String?
+  created_at      DateTime @default(now())
+  delivered_at    DateTime?
+
+  @@index([webhook_id])
+  @@index([event_type])
+  @@index([delivered])
+  @@index([next_retry_at])
+  @@index([created_at])
+  @@map("webhook_delivery_logs")
+}
+
+// Performance monitoring logs
+model Performance_Logs {
+  id              BigInt   @id @default(autoincrement())
+  module          String
+  operation       String
+  execution_time  Int
+  memory_usage    BigInt?
+  cpu_usage       Float?
+  database_queries Int?
+  query_time      Int?
+  cache_hits      Int?
+  cache_misses    Int?
+  user_id         BigInt?
+  request_id      String?
+  metadata        Json?
+  created_at      DateTime @default(now())
+
+  @@index([module])
+  @@index([operation])
+  @@index([execution_time])
+  @@index([created_at])
+  @@map("performance_logs")
+}
