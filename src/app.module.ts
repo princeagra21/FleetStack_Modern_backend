@@ -3,10 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
 import { TestModule } from './modules/test/test.module';
-import { LoggerModule } from './common/modules/logger.module';
+import { WinstonLoggerModule } from './common/modules/winston-logger.module';
 
 @Module({
-  imports: [HealthModule, TestModule, LoggerModule],
+  imports: [WinstonLoggerModule, HealthModule, TestModule],
   controllers: [AppController],
   providers: [AppService],
 })
