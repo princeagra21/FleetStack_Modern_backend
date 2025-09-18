@@ -17,7 +17,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prisma:init": "ts-node prisma/init/initialize.ts",
+    "prisma:generate": "npx prisma generate --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/logs.prisma && npx prisma generate --schema=prisma/address.prisma",
+    "prisma:push": "npx prisma db push --schema=prisma/schema.prisma && npx prisma db push --schema=prisma/logs.prisma && npx prisma db push --schema=prisma/address.prisma",
+    "prisma:studio:primary": "npx prisma studio --schema=prisma/schema.prisma",
+    "prisma:studio:logs": "npx prisma studio --schema=prisma/logs.prisma",
+    "prisma:studio:address": "npx prisma studio --schema=prisma/address.prisma"
   },
   "dependencies": {
     "@fastify/static": "^8.2.0",

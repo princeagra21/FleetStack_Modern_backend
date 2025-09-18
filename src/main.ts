@@ -6,8 +6,17 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { ValidationPipe } from './common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { securityConfig } from './common/config/security.config';
+import { initializePrisma } from '../prisma/init/initialize';
 
 async function bootstrap() {
+  console.log('🚀 Starting FleetStack Backend Server...\n');
+
+  try {
+    await initializePrisma();
+  } catch (error) {
+    console.error('💥 Failed to initialize Prisma. Server startup aborted.');
+    process.exit(1);
+  }
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
@@ -29,6 +38,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3007, '0.0.0.0');
+  const port = process.env.PORT ?? 3007;
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`\n🎉 FleetStack Backend Server is running on port ${port}`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api`);
+  console.log(`🏥 Health Check: http://localhost:${port}/health\n`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('💥 Failed to start server:', error);
+  process.exit(1);
+});
