@@ -1,0 +1,6 @@
+PRIMARY_DATABASE_URL="postgresql://user:password@localhost:5432/fleetstack_primary?schema=public"
+LOGS_DATABASE_URL="postgresql://user:password@localhost:5432/fleetstack_logs?schema=public"  
+ADDRESS_DATABASE_URL="postgresql://user:password@localhost:5432/fleetstack_address?schema=public"
+JWT_SECRET="fleetstack_super_secret_jwt_key_2024"
+NODE_ENV="development"
+PORT=3007

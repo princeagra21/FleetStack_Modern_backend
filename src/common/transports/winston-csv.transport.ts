@@ -7,14 +7,14 @@ interface CsvTransportOptions extends winston.transports.FileTransportOptions {
     csvHeaders?: string[];
 }
 
-export class CsvTransport extends winston.transports.Stream {
+export class CsvTransport extends winston.transports.File {
     private csvDir: string;
     private csvHeaders: string[];
     private currentDate: string = '';
     private currentFilePath: string = '';
 
     constructor(options: CsvTransportOptions = {}) {
-        super(options);
+        super({ ...options, filename: 'temp.csv' });
 
         this.csvDir = options.csvDir || 'api_logs';
         this.csvHeaders = options.csvHeaders || [

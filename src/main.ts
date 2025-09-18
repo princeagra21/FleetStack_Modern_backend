@@ -37,6 +37,7 @@ async function bootstrap() {
     .setTitle('FleetStack API')
     .setDescription('Modern Backend API for FleetStack')
     .setVersion('1.0')
+    .addTag('auth', 'Authentication endpoints')
     .addTag('health', 'Health check endpoints')
     .addTag('test', 'Test endpoints with dummy data')
     .build();
